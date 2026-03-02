@@ -32,24 +32,28 @@ app.add_middleware(
 )
 
 
-def _round_dp(value: float, decimals: int) -> float:
-    """Round to given decimal places without triggering Pyre2 overload errors."""
+def _round_dp(value, decimals):
+    """Round to given decimal places."""
     factor = 10 ** decimals
     return float(int(value * factor + 0.5)) / float(factor)
 
 
-def _first_n(items: list, n: int) -> list:
+def _first_n(items, n):
     """Return first n items from a list without using slice syntax."""
     result = []
-    for i in range(min(n, len(items))):
+    count = len(items)
+    if n < count:
+        count = n
+    i = 0
+    while i < count:
         result.append(items[i])
+        i = i + 1
     return result
 
 
 @app.on_event("startup")
-def startup_event() -> None:
+def startup_event():
     database.init_db()
-    # Auto-fetch and process news continuously in the background
     thread = threading.Thread(target=pipeline.run_pipeline, kwargs={"one_shot": False}, daemon=True)
     thread.start()
 
@@ -57,7 +61,7 @@ def startup_event() -> None:
 # -- Core Endpoints -----------------------------------------------------------
 
 @app.get("/api/metrics")
-def get_metrics() -> dict:
+def get_metrics():
     ac = database.get_article_count()
     events = database.get_all_events(100)
     sd = database.get_sentiment_distribution()
@@ -69,10 +73,12 @@ def get_metrics() -> dict:
 
 
 @app.get("/api/events")
-def get_events(limit: int = 25) -> list:
+def get_events(limit=25):
     events = database.get_all_events(limit)
     res = []
-    for ev in events:
+    ev_idx = 0
+    while ev_idx < len(events):
+        ev = events[ev_idx]
         try:
             aids = json.loads(ev.get("article_ids_json", "[]"))
         except Exception:
@@ -82,13 +88,16 @@ def get_events(limit: int = 25) -> list:
         if aids:
             limited_aids = _first_n(aids, 8)
             la_articles = database.get_articles_by_ids(limited_aids)
-            for la in la_articles:
+            la_idx = 0
+            while la_idx < len(la_articles):
+                la = la_articles[la_idx]
                 articles.append({
                     "title": la.get("title", ""),
                     "sentiment_label": la.get("sentiment_label", "Neutral"),
                     "source": la.get("source", ""),
                     "url": la.get("url", "")
                 })
+                la_idx = la_idx + 1
 
         res.append({
             "id": ev["event_id"],
@@ -102,14 +111,17 @@ def get_events(limit: int = 25) -> list:
             "impacts": json.loads(ev.get("impact_json", "[]")),
             "articles": articles
         })
+        ev_idx = ev_idx + 1
     return res
 
 
 @app.get("/api/articles")
-def get_articles(limit: int = 100) -> list:
+def get_articles(limit=100):
     articles = database.get_recent_articles(limit)
     result = []
-    for a in articles:
+    i = 0
+    while i < len(articles):
+        a = articles[i]
         score = float(a.get("sentiment_score", 0))
         result.append({
             "id": a["id"],
@@ -119,24 +131,29 @@ def get_articles(limit: int = 100) -> list:
             "sentiment_score": _round_dp(score, 3),
             "published_at": a["published_at"]
         })
+        i = i + 1
     return result
 
 
 @app.get("/api/impacts")
-def get_impact_summary() -> list:
+def get_impact_summary():
     si = database.get_sector_impact_summary()
-    sa: dict = {}
+    sa = {}
     if si:
-        for imp in si:
+        idx = 0
+        while idx < len(si):
+            imp = si[idx]
             s = imp["sector"]
             if s not in sa:
                 sa[s] = {"bullish": 0, "bearish": 0, "total": 0}
             entry = sa[s]
-            if "Bullish" in str(imp["direction"]):
+            direction_str = str(imp["direction"])
+            if "Bullish" in direction_str:
                 entry["bullish"] = entry["bullish"] + imp["count"]
-            elif "Bearish" in str(imp["direction"]):
+            elif "Bearish" in direction_str:
                 entry["bearish"] = entry["bearish"] + imp["count"]
             entry["total"] = entry["total"] + imp["count"]
+            idx = idx + 1
 
     res = []
     sorted_sectors = sorted(sa.keys(), key=lambda x: -int(sa[x]["total"]))
@@ -159,13 +176,13 @@ def get_impact_summary() -> list:
 
 
 @app.get("/api/pipeline_runs")
-def get_pipeline_runs(limit: int = 5) -> list:
+def get_pipeline_runs(limit=5):
     runs = database.get_recent_pipeline_runs(limit)
     return runs
 
 
 @app.get("/api/status")
-def get_status() -> dict:
+def get_status():
     """Get overall system health and pipeline status."""
     runs = database.get_recent_pipeline_runs(1)
     status = "healthy"
@@ -174,10 +191,15 @@ def get_status() -> dict:
     elif runs[0]["status"] == "error":
         status = "degraded"
 
-    last_run = runs[0] if runs else None
+    last_run = None
+    if runs:
+        last_run = runs[0]
+
     last_update = datetime.utcnow().isoformat()
-    if runs and runs[0].get("finished_at"):
-        last_update = str(runs[0]["finished_at"])
+    if runs:
+        finished = runs[0].get("finished_at")
+        if finished:
+            last_update = str(finished)
 
     return {
         "status": status,
@@ -193,7 +215,7 @@ class ChatRequest(BaseModel):
 
 
 @app.post("/api/ai/chat")
-def chat_with_oracle(req: ChatRequest) -> dict:
+def chat_with_oracle(req: ChatRequest):
     """Chat with the VOILORACLE Intelligence Core using Gemini."""
     system_instruction = (
         "You are the VOILORACLE Intelligence Core, a state-of-the-art AI monitoring global signals. "
@@ -201,7 +223,6 @@ def chat_with_oracle(req: ChatRequest) -> dict:
         "Keep responses concise and impactful."
     )
 
-    # Enrich prompt with some context if needed
     context = ""
     if "sentiment" in req.message.lower() or "market" in req.message.lower():
         sd = database.get_sentiment_distribution()
@@ -212,24 +233,29 @@ def chat_with_oracle(req: ChatRequest) -> dict:
     return {"response": response}
 
 
-# -- NEW AI Endpoints ---------------------------------------------------------
+# -- AI Endpoints -------------------------------------------------------------
 
 @app.get("/api/ai/entities")
-def get_entities() -> dict:
+def get_entities():
     """Extract named entities from recent articles using spaCy NER."""
     articles = database.get_recent_articles(100)
-    for a in articles:
+    i = 0
+    while i < len(articles):
+        a = articles[i]
         a["clean_text"] = str(a.get("title", "")) + ". " + str(a.get("description", ""))
+        i = i + 1
     result = ner_engine.extract_from_articles(articles)
     return result
 
 
 @app.get("/api/ai/trends")
-def get_trends() -> dict:
+def get_trends():
     """Get AI-predicted sentiment trends per sector."""
     articles = database.get_recent_articles(200)
     enriched = []
-    for a in articles:
+    i = 0
+    while i < len(articles):
+        a = articles[i]
         impacts_raw = a.get("impacts_json", "[]")
         if isinstance(impacts_raw, str):
             impacts_parsed = json.loads(impacts_raw)
@@ -242,17 +268,20 @@ def get_trends() -> dict:
             "sentiment": {"label": a.get("sentiment_label", "Neutral"), "compound": a.get("sentiment_score", 0.0)},
             "impacts": impacts_parsed
         })
+        i = i + 1
     trends = trend_engine.analyze_sector_trends(enriched)
     movers = trend_engine.get_top_movers(trends)
     return movers
 
 
 @app.get("/api/ai/anomalies")
-def get_anomalies() -> dict:
+def get_anomalies():
     """Detect anomalies in recent article data."""
     articles = database.get_recent_articles(200)
     enriched = []
-    for a in articles:
+    i = 0
+    while i < len(articles):
+        a = articles[i]
         impacts_raw = a.get("impacts_json", "[]")
         if isinstance(impacts_raw, str):
             impacts_parsed = json.loads(impacts_raw)
@@ -265,11 +294,12 @@ def get_anomalies() -> dict:
             "sentiment": {"label": a.get("sentiment_label", "Neutral"), "compound": a.get("sentiment_score", 0.0)},
             "impacts": impacts_parsed
         })
+        i = i + 1
     return anomaly_engine.run_anomaly_detection(enriched)
 
 
 @app.get("/api/ai/summary")
-def get_ai_summary() -> dict:
+def get_ai_summary():
     """Get comprehensive AI-generated intelligence summary."""
     articles = database.get_recent_articles(50)
     sd = database.get_sentiment_distribution()
@@ -301,7 +331,6 @@ def get_ai_summary() -> dict:
     else:
         mood = "Mixed / Uncertain"
 
-    # Calculate a simplified stability score
     stability = 100.0 - (neg_pct * 1.2) - (float(neutral) / float(total) * 10.0)
     if stability < 0.0:
         stability = 0.0
@@ -309,7 +338,9 @@ def get_ai_summary() -> dict:
         stability = 100.0
     stability = _round_dp(stability, 1)
 
-    larger_pct = pos_pct if pos_pct > neg_pct else neg_pct
+    larger_pct = pos_pct
+    if neg_pct > pos_pct:
+        larger_pct = neg_pct
     confidence = _round_dp(larger_pct / 100.0, 3)
 
     summary_text = (
