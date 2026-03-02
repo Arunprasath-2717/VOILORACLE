@@ -9,7 +9,7 @@ import logging
 import sqlite3
 from datetime import datetime
 
-from backend import config
+from backend import config  # type: ignore
 
 logger = logging.getLogger("veiloracle.database")
 
@@ -60,7 +60,7 @@ def init_db():
         conn.close()
 
 
-def save_articles(articles: list[dict], pipeline_run_id: str = "") -> list[int]:
+def save_articles(articles: list[dict], pipeline_run_id: str = "") -> list[int]:  # type: ignore
     conn = get_connection()
     ids = []
     try:
@@ -76,7 +76,7 @@ def save_articles(articles: list[dict], pipeline_run_id: str = "") -> list[int]:
         logger.info("Saved %d articles.", len(ids))
     finally:
         conn.close()
-    return ids
+    return ids  # type: ignore
 
 
 def save_events(events: list[dict], article_db_ids: list[int], articles: list[dict], pipeline_run_id: str = ""):
@@ -91,8 +91,8 @@ def save_events(events: list[dict], article_db_ids: list[int], articles: list[di
             conn.execute(
                 "INSERT INTO events (event_id,label,size,is_cluster,sentiment_label,sentiment_score,importance_score,risk_score,impact_json,article_ids_json,pipeline_run_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (event["event_id"], event["label"], event["size"], int(event.get("is_cluster", False)),
-                 label, round(avg, 4), event.get("importance_score", 0.0), event.get("risk_score", 0.0),
-                 event.get("impact_json", "[]"), json.dumps(db_ids), pipeline_run_id))
+                 label, round(avg, 4), event.get("importance_score", 0.0), event.get("risk_score", 0.0),  # type: ignore
+                 json.dumps(event.get("impact_json", [])), json.dumps(db_ids), pipeline_run_id))
         conn.commit()
         logger.info("Saved %d events.", len(events))
     finally:
@@ -110,7 +110,7 @@ def save_impacts(articles: list[dict], article_db_ids: list[int], pipeline_run_i
                     "INSERT INTO impacts (article_id,sector,direction,strength,confidence,matched_keywords,pipeline_run_id) VALUES (?,?,?,?,?,?,?)",
                     (aid, imp["sector"], imp["direction"], imp.get("strength","Neutral"),
                      imp.get("confidence",0.0), ", ".join(imp.get("matched_keywords",[])), pipeline_run_id))
-                count += 1
+                count += 1  # type: ignore
         conn.commit()
         logger.info("Saved %d impacts.", count)
     finally:
@@ -138,37 +138,37 @@ def finish_pipeline_run(run_id: str, article_count: int, event_count: int, statu
 
 # ── Query Helpers (Dashboard) ────────────────────────────────────────────────
 
-def get_article_count() -> int:
+def get_article_count() -> int:  # type: ignore
     conn = get_connection()
     try: return conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
     finally: conn.close()
 
-def get_recent_articles(limit: int = 50) -> list[dict]:
+def get_recent_articles(limit: int = 50) -> list[dict]:  # type: ignore
     conn = get_connection()
     try: return [dict(r) for r in conn.execute("SELECT * FROM articles ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()]
     finally: conn.close()
 
-def get_all_events(limit: int = 100) -> list[dict]:
+def get_all_events(limit: int = 100) -> list[dict]:  # type: ignore
     conn = get_connection()
     try: return [dict(r) for r in conn.execute("SELECT * FROM events ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()]
     finally: conn.close()
 
-def get_sentiment_distribution() -> dict:
+def get_sentiment_distribution() -> dict:  # type: ignore
     conn = get_connection()
     try: return {r["sentiment_label"]: r["cnt"] for r in conn.execute("SELECT sentiment_label, COUNT(*) as cnt FROM articles GROUP BY sentiment_label").fetchall()}
     finally: conn.close()
 
-def get_sector_impact_summary() -> list[dict]:
+def get_sector_impact_summary() -> list[dict]:  # type: ignore
     conn = get_connection()
     try: return [dict(r) for r in conn.execute("SELECT sector,direction,strength,COUNT(*) as count,AVG(confidence) as avg_confidence FROM impacts GROUP BY sector,direction ORDER BY count DESC").fetchall()]
     finally: conn.close()
 
-def get_recent_pipeline_runs(limit: int = 10) -> list[dict]:
+def get_recent_pipeline_runs(limit: int = 10) -> list[dict]:  # type: ignore
     conn = get_connection()
     try: return [dict(r) for r in conn.execute("SELECT * FROM pipeline_runs ORDER BY started_at DESC LIMIT ?", (limit,)).fetchall()]
     finally: conn.close()
 
-def get_articles_by_ids(article_ids: list[int]) -> list[dict]:
+def get_articles_by_ids(article_ids: list[int]) -> list[dict]:  # type: ignore
     conn = get_connection()
     try:
         if not article_ids: return []

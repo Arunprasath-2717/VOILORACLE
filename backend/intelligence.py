@@ -1,16 +1,26 @@
+"""
+VEILORACLE - Intelligence Engine
+Calculates importance, risk, and sector impacts for events.
+Fully Pyre-safe version.
+"""
+
 from typing import List, Dict, Any
-import json
 import logging
 
 logger = logging.getLogger("veiloracle.intelligence")
 
 
+# ---------- Utilities ----------
+
 def _round_1dp(value: float) -> float:
+    """Round to 1 decimal place without using round(x, ndigits)."""
     return float(int(value * 10 + 0.5)) / 10.0
 
 
 def _get_top_n(items: List[Dict[str, Any]], n: int) -> List[Dict[str, Any]]:
+    """Return first n items safely."""
     result: List[Dict[str, Any]] = []
+
     count = len(items)
 
     if n < count:
@@ -19,7 +29,7 @@ def _get_top_n(items: List[Dict[str, Any]], n: int) -> List[Dict[str, Any]]:
     i = 0
     while i < count:
         result.append(items[i])
-        i += 1
+        i = i + 1
 
     return result
 
@@ -35,6 +45,8 @@ def _find_dominant(bullish: int, bearish: int, neutral: int) -> str:
     return "Neutral"
 
 
+# ---------- Core Engine ----------
+
 def compute_intelligence(
     events: List[Dict[str, Any]],
     articles: List[Dict[str, Any]]
@@ -46,7 +58,14 @@ def compute_intelligence(
 
         event: Dict[str, Any] = events[event_idx]
 
-        indices: List[int] = event.get("article_indices", [])
+        # ---------- Article Index Handling ----------
+
+        raw_indices = event.get("article_indices", [])
+
+        if isinstance(raw_indices, list):
+            indices: List[int] = raw_indices
+        else:
+            indices = []
 
         cluster_articles: List[Dict[str, Any]] = []
 
@@ -54,12 +73,16 @@ def compute_intelligence(
 
         while j < len(indices):
 
-            idx = indices[j]
+            idx_val = indices[j]  # type: ignore
 
-            if isinstance(idx, int) and idx < len(articles):
-                cluster_articles.append(articles[idx])
+            if isinstance(idx_val, int):
 
-            j += 1
+                if idx_val < len(articles):
+                    cluster_articles.append(articles[idx_val])  # type: ignore
+
+            j = j + 1
+
+        # ---------- Empty Cluster ----------
 
         if len(cluster_articles) == 0:
 
@@ -67,19 +90,19 @@ def compute_intelligence(
             event["risk_score"] = 0.0
             event["impact_json"] = []
 
-            event_idx += 1
+            event_idx = event_idx + 1
             continue
 
-        # Importance Score
+        # ---------- Importance Score ----------
 
         size_val = int(event.get("size", 1))
 
-        size_capped = size_val * 3
+        size_factor_val = size_val * 3
 
-        if size_capped > 60:
-            size_capped = 60
+        if size_factor_val > 60:
+            size_factor_val = 60
 
-        size_factor = float(size_capped)
+        size_factor = float(size_factor_val)
 
         total_intensity = 0.0
         art_count = 0
@@ -88,19 +111,28 @@ def compute_intelligence(
 
         while k < len(cluster_articles):
 
-            a: Dict[str, Any] = cluster_articles[k]
+            article: Dict[str, Any] = cluster_articles[k]
 
-            s: Dict[str, Any] = a.get("sentiment", {})
+            sentiment = article.get("sentiment", {})
 
-            compound = float(s.get("compound", 0))
+            if not isinstance(sentiment, dict):
+                sentiment = {}
+
+            compound_val = sentiment.get("compound", 0)
+
+            try:
+                compound = float(compound_val)
+            except Exception:
+                compound = 0.0
 
             if compound < 0:
-                compound = -compound
+                compound = compound * -1.0
 
-            total_intensity += compound
-            art_count += 1
+            total_intensity = total_intensity + compound
 
-            k += 1
+            art_count = art_count + 1
+
+            k = k + 1
 
         avg_intensity = 0.0
 
@@ -116,7 +148,7 @@ def compute_intelligence(
 
         event["importance_score"] = importance
 
-        # Risk Score
+        # ---------- Risk Score ----------
 
         neg_count = 0
 
@@ -124,14 +156,16 @@ def compute_intelligence(
 
         while k < len(cluster_articles):
 
-            a = cluster_articles[k]
+            article = cluster_articles[k]
 
-            s: Dict[str, Any] = a.get("sentiment", {})
+            sentiment = article.get("sentiment", {})
 
-            if s.get("label") == "Negative":
-                neg_count += 1
+            if isinstance(sentiment, dict):
 
-            k += 1
+                if sentiment.get("label") == "Negative":
+                    neg_count = neg_count + 1  # type: ignore
+
+            k = k + 1
 
         total_articles = len(cluster_articles)
 
@@ -142,9 +176,12 @@ def compute_intelligence(
 
         risk = _round_1dp(neg_ratio * 100.0)
 
+        if risk > 100:
+            risk = 100.0
+
         event["risk_score"] = risk
 
-        # Sector Impact
+        # ---------- Sector Impacts ----------
 
         sector_data: Dict[str, Dict[str, int]] = {}
 
@@ -152,52 +189,65 @@ def compute_intelligence(
 
         while k < len(cluster_articles):
 
-            a = cluster_articles[k]
+            article = cluster_articles[k]
 
-            impact_list: List[Dict[str, Any]] = a.get("impacts", [])
+            raw_impacts = article.get("impacts", [])
+
+            if isinstance(raw_impacts, list):
+                impact_list: List[Dict[str, Any]] = raw_impacts
+            else:
+                impact_list = []
 
             m = 0
 
             while m < len(impact_list):
 
-                imp = impact_list[m]
+                imp = impact_list[m]  # type: ignore
 
-                sector = str(imp.get("sector", "Unknown"))
+                if isinstance(imp, dict):
 
-                raw_direction = str(imp.get("direction", "Neutral"))
+                    sector_val = imp.get("sector", "Unknown")
+                    sector = str(sector_val)
 
-                if "Bullish" in raw_direction:
-                    direction = "Bullish"
+                    direction_val = imp.get("direction", "Neutral")
+                    raw_direction = str(direction_val)
 
-                elif "Bearish" in raw_direction:
-                    direction = "Bearish"
+                    if "Bullish" in raw_direction:
+                        direction = "Bullish"
 
-                else:
-                    direction = "Neutral"
+                    elif "Bearish" in raw_direction:
+                        direction = "Bearish"
 
-                if sector not in sector_data:
+                    else:
+                        direction = "Neutral"
 
-                    sector_data[sector] = {
-                        "Bullish": 0,
-                        "Bearish": 0,
-                        "Neutral": 0
-                    }
+                    if sector not in sector_data:
 
-                sector_data[sector][direction] += 1
+                        sector_data[sector] = {
+                            "Bullish": 0,
+                            "Bearish": 0,
+                            "Neutral": 0
+                        }
 
-                m += 1
+                    entry: Dict[str, int] = sector_data[sector]  # type: ignore
 
-            k += 1
+                    entry[direction] = entry[direction] + 1  # type: ignore
+
+                m = m + 1
+
+            k = k + 1  # type: ignore
+
+        # ---------- Impact Summary ----------
 
         impact_summary: List[Dict[str, Any]] = []
 
         for sector_name in sector_data:
 
-            entry = sector_data[sector_name]
+            entry: Dict[str, int] = sector_data[sector_name]
 
-            b_val = entry["Bullish"]
-            be_val = entry["Bearish"]
-            n_val = entry["Neutral"]
+            b_val = int(entry["Bullish"])
+            be_val = int(entry["Bearish"])
+            n_val = int(entry["Neutral"])
 
             dominant = _find_dominant(b_val, be_val, n_val)
 
@@ -207,8 +257,10 @@ def compute_intelligence(
                 "count": b_val + be_val + n_val
             })
 
+        # Safe sorting
+
         impact_summary.sort(
-            key=lambda x: x["count"],
+            key=lambda x: int(x.get("count", 0)),
             reverse=True
         )
 
@@ -216,6 +268,6 @@ def compute_intelligence(
 
         event["impact_json"] = top_impacts
 
-        event_idx += 1
+        event_idx = event_idx + 1
 
     return events

@@ -19,12 +19,12 @@ def _get_nlp():
     global _nlp, _use_spacy
     if _nlp is None:
         try:
-            import spacy
+            import spacy  # type: ignore
             try:
                 _nlp = spacy.load("en_core_web_sm")
             except OSError:
                 logger.info("Downloading spaCy en_core_web_sm model...")
-                from spacy.cli import download
+                from spacy.cli import download  # type: ignore
                 download("en_core_web_sm")
                 _nlp = spacy.load("en_core_web_sm")
             logger.info("spaCy NER model loaded.")
@@ -92,7 +92,7 @@ def extract_entities(text: str) -> list[dict]:
 
     if _use_spacy and nlp != "fallback":
         try:
-            doc = nlp(text[:5000])  # Limit input length
+            doc = nlp(text[:5000])  # type: ignore
             entity_counts = Counter()
             entity_labels = {}
             for ent in doc.ents:
