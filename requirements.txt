@@ -1,0 +1,15 @@
+fastapi>=0.109.0
+uvicorn>=0.27.0
+python-dotenv>=1.0.0
+feedparser>=6.0.0
+newsapi-python>=0.2.7
+requests>=2.31.0
+nltk>=3.8.0
+scikit-learn>=1.4.0
+sentence-transformers>=2.3.0
+numpy>=1.26.0
+spacy>=3.7.0
+transformers>=4.36.0
+torch>=2.1.0
+google-generativeai>=0.4.0
+
