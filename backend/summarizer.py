@@ -6,15 +6,12 @@ Falls back to extractive summarization if transformers unavailable.
 """
 
 import logging
-
-import backend.config as config
-from backend import gemini_engine
+from backend import config
 
 logger = logging.getLogger("veiloracle.summarizer")
 
 _summarizer = None
 _use_transformers = True
-_use_gemini = config.GEMINI_API_KEY != ""
 
 
 def _get_summarizer():
@@ -58,29 +55,7 @@ def summarize_text(text: str, max_length: int = 130, min_length: int = 30) -> st
     if not text or len(text.strip()) < 50:
         return text.strip() if text else ""
 
-    # 1. Try Gemini only for standalone calls, not bulk pipeline processing
-    # Skipping Gemini for bulk to preserve API quota (free tier: 20 req/day)
-    # If _use_gemini and not bulk mode, try it
-    
-    # 2. Try Transformers (Tier 2) — also skip for speed during pipeline
-    # Use extractive for all pipeline calls — fast and reliable
     return _extractive_summary(text)
-
-    # 2. Try Transformers (Tier 2)
-    summarizer = _get_summarizer()
-    if _use_transformers and summarizer != "fallback":
-        try:
-            input_text = text[:1024]
-            result = summarizer(input_text, max_length=max_length, min_length=min_length,
-                                do_sample=False, truncation=True)
-            return result[0]["summary_text"]
-        except Exception as e:
-            logger.warning("BART summarization failed: %s, using extractive fallback", e)
-            return _extractive_summary(text)
-    
-    # 3. Extractive Fallback (Tier 3)
-    else:
-        return _extractive_summary(text)
 
 
 def summarize_event(event: dict, articles: list[dict]) -> str:

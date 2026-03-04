@@ -84,34 +84,26 @@ function App() {
     const [entities, setEntities] = useState({ entities: [], grouped: {} });
     const [trends, setTrends] = useState({ rising: [], falling: [], total_analyzed: 0 });
     const [anomalies, setAnomalies] = useState({ anomalies: [], critical_count: 0, warning_count: 0 });
-    const [aiSummary, setAiSummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expandedEvent, setExpandedEvent] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
     const [articlesList, setArticlesList] = useState([]);
     const [globalSearch, setGlobalSearch] = useState('');
-    const [notifications, setNotifications] = useState([]);
-    const [isChatOpen, setIsChatOpen] = useState(false);
-    const [chatInput, setChatInput] = useState('');
     const [sectorSearch, setSectorSearch] = useState('');
     const [systemStatus, setSystemStatus] = useState({ last_update: null, status: 'initializing' });
-    const [chatMessages, setChatMessages] = useState([
-        { role: 'bot', text: "I am VOILORACLE's intelligence core. How can I assist your analysis today?" }
-    ]);
     const prevArticleCount = useRef(0);
 
     // ── Data Fetching ─────────────────────────────────────────
     const fetchData = async () => {
         try {
-            const [metricsRes, eventsRes, impactsRes, entitiesRes, trendsRes, anomaliesRes, summaryRes, articlesListRes, statusRes] = await Promise.all([
+            const [metricsRes, eventsRes, impactsRes, entitiesRes, trendsRes, anomaliesRes, articlesListRes, statusRes] = await Promise.all([
                 fetch(`${API_BASE}/metrics`).catch(() => null),
                 fetch(`${API_BASE}/events?limit=100`).catch(() => null),
                 fetch(`${API_BASE}/impacts`).catch(() => null),
                 fetch(`${API_BASE}/ai/entities`).catch(() => null),
                 fetch(`${API_BASE}/ai/trends`).catch(() => null),
                 fetch(`${API_BASE}/ai/anomalies`).catch(() => null),
-                fetch(`${API_BASE}/ai/summary`).catch(() => null),
                 fetch(`${API_BASE}/articles?limit=200`).catch(() => null),
                 fetch(`${API_BASE}/status`).catch(() => null),
             ]);
@@ -143,7 +135,6 @@ function App() {
             if (entitiesRes && entitiesRes.ok) setEntities(await entitiesRes.json());
             if (trendsRes && trendsRes.ok) setTrends(await trendsRes.json());
             if (anomaliesRes && anomaliesRes.ok) setAnomalies(await anomaliesRes.json());
-            if (summaryRes && summaryRes.ok) setAiSummary(await summaryRes.json());
             if (articlesListRes && articlesListRes.ok) setArticlesList(await articlesListRes.json());
 
             setLoading(false);
@@ -175,7 +166,12 @@ function App() {
         (art.source || '').toLowerCase().includes(globalSearch.toLowerCase())
     );
 
-    const moodColor = aiSummary?.market_mood?.includes('Bullish') ? '#00e5d0' : aiSummary?.market_mood?.includes('Bearish') ? '#ff5252' : '#7c6cf0';
+    const totalPositive = metrics?.sentiment_distribution?.Positive || 0;
+    const totalNegative = metrics?.sentiment_distribution?.Negative || 0;
+    const totalNeutral = metrics?.sentiment_distribution?.Neutral || 0;
+    const isBullish = totalPositive > totalNegative;
+    const stabilityScore = metrics?.article_count > 0 ? ((totalPositive / metrics.article_count) * 100).toFixed(1) : '--';
+    const moodColor = isBullish ? '#00e5d0' : '#ff5252';
     const activePulseSpeed = loading ? 0.8 : 0.4;
 
     // ── Tab Definitions ───────────────────────────────────────
@@ -183,14 +179,11 @@ function App() {
         { id: 'overview', label: 'Overview', icon: <Eye size={14} /> },
         { id: 'events', label: 'Live Events', icon: <Zap size={14} />, badge: filteredEvents.length },
         { id: 'sectors', label: 'Sector Analysis', icon: <Activity size={14} />, badge: filteredImpacts.length },
-        { id: 'intelligence', label: 'Intelligence', icon: <Cpu size={14} /> },
         { id: 'articles', label: 'News Feed', icon: <Newspaper size={14} />, badge: filteredArticles.length },
-        { id: 'trends', label: 'Forecasts', icon: <TrendingUp size={14} /> },
     ];
 
     // ── Mood Color ────────────────────────────────────────────
-    const moodClass = aiSummary?.market_mood?.includes('Bullish') ? 'mood-bullish'
-        : aiSummary?.market_mood?.includes('Bearish') ? 'mood-bearish' : 'mood-mixed';
+    const moodClass = isBullish ? 'mood-bullish' : 'mood-bearish';
 
     // ── Entity Icon ───────────────────────────────────────────
     const entityIcon = (label) => {
@@ -203,31 +196,7 @@ function App() {
         }
     };
 
-    const handleChatSubmit = async (e) => {
-        e.preventDefault();
-        if (!chatInput.trim()) return;
 
-        const userMsg = { role: 'user', text: chatInput };
-        setChatMessages(prev => [...prev, userMsg]);
-        setChatInput('');
-
-        try {
-            const response = await fetch(`${API_BASE}/ai/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: chatInput, history: chatMessages.slice(-5) })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setChatMessages(prev => [...prev, { role: 'bot', text: data.response }]);
-            } else {
-                setChatMessages(prev => [...prev, { role: 'bot', text: "Satellite connection lost. Gemini Core unreachable." }]);
-            }
-        } catch (err) {
-            setChatMessages(prev => [...prev, { role: 'bot', text: "Error connecting to Intelligence Core." }]);
-        }
-    };
 
     return (
         <>
@@ -290,23 +259,6 @@ function App() {
                         <div className="error-banner">⚠️ {error}</div>
                     ) : (
                         <>
-                            {/* ── AI Intelligence Summary Banner ─── */}
-                            {aiSummary && (
-                                <div className="ai-banner">
-                                    <div className="ai-banner-icon">🧠</div>
-                                    <div className="ai-banner-content">
-                                        <div className="ai-banner-title">
-                                            <Cpu size={12} /> AI Intelligence Briefing
-                                        </div>
-                                        <div className="ai-banner-text">{aiSummary.summary}</div>
-                                    </div>
-                                    <div className="ai-banner-mood">
-                                        <div className="mood-label">Market Mood</div>
-                                        <div className={`mood-value ${moodClass}`}>{aiSummary.market_mood}</div>
-                                    </div>
-                                </div>
-                            )}
-
                             {/* ── Dashboard Pulse — Global Stability ─── */}
                             <div className="intelligence-overview">
                                 <div className="overview-main glass-panel">
@@ -315,18 +267,18 @@ function App() {
                                             <svg viewBox="0 0 100 100">
                                                 <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
                                                 <circle cx="50" cy="50" r="45" fill="none" stroke="var(--accent-cyan)" strokeWidth="8"
-                                                    strokeDasharray={`${(aiSummary?.global_stability_score || 0) * 2.8} 283`}
+                                                    strokeDasharray={`${(stabilityScore === '--' ? 0 : stabilityScore) * 2.8} 283`}
                                                     strokeLinecap="round" transform="rotate(-90 50 50)" />
                                             </svg>
                                             <div className="stability-value">
-                                                <span>{aiSummary?.global_stability_score || '--'}%</span>
+                                                <span>{stabilityScore}%</span>
                                                 <small>STABILITY</small>
                                             </div>
                                         </div>
                                         <div className="stability-info">
                                             <div className="briefing-tag">GLOBAL INTEERELIGENCE STATUS</div>
-                                            <div className="briefing-title">Neural Matrix: {aiSummary?.market_mood || 'Analyzing...'}</div>
-                                            <div className="briefing-text">{aiSummary?.summary}</div>
+                                            <div className="briefing-title">Neural Matrix: {isBullish ? 'Bullish' : 'Bearish'}</div>
+                                            <div className="briefing-text">Analyzing global domains, detecting market structures and mapping events across {metrics.article_count} neural impact points.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -879,145 +831,8 @@ function App() {
                                 </div>
                             )}
 
-                            {/* ═══════════════════════════════════════════════
-                            TAB: TRENDS (Linear Regression Forecast)
-                           ═══════════════════════════════════════════════ */}
-                            {activeTab === 'trends' && (
-                                <div className="main-content">
-                                    {/* Rising Sectors */}
-                                    <div className="section glass-panel">
-                                        <div className="section-title">
-                                            <TrendingUp size={18} color="var(--positive)" />
-                                            AI-Predicted Rising Sectors
-                                            <span className="section-title-count">(Linear Regression)</span>
-                                        </div>
-                                        <div className="trend-list">
-                                            {trends.rising && trends.rising.length > 0 ? trends.rising.map((t, i) => (
-                                                <div key={i} className="trend-card glass-card">
-                                                    <div className="trend-arrow rising">↑</div>
-                                                    <div className="trend-info">
-                                                        <div className="trend-sector" title={t.sector}>{t.sector}</div>
-                                                        <div className="trend-details">
-                                                            <span>slope: {t.slope > 0 ? '+' : ''}{t.slope}</span>
-                                                            <span>momentum: {t.momentum > 0 ? '+' : ''}{t.momentum}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="trend-confidence" style={{ color: 'var(--positive)' }}>
-                                                        {(t.confidence * 100).toFixed(0)}%
-                                                    </div>
-                                                </div>
-                                            )) : (
-                                                <div className="empty-state">
-                                                    <div className="empty-state-icon">📈</div>
-                                                    <div className="empty-state-text">No rising trends detected</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Falling Sectors */}
-                                    <div className="section glass-panel">
-                                        <div className="section-title">
-                                            <TrendingDown size={18} color="var(--negative)" />
-                                            AI-Predicted Falling Sectors
-                                            <span className="section-title-count">(Linear Regression)</span>
-                                        </div>
-                                        <div className="trend-list">
-                                            {trends.falling && trends.falling.length > 0 ? trends.falling.map((t, i) => (
-                                                <div key={i} className="trend-card glass-card">
-                                                    <div className="trend-arrow falling">↓</div>
-                                                    <div className="trend-info">
-                                                        <div className="trend-sector" title={t.sector}>{t.sector}</div>
-                                                        <div className="trend-details">
-                                                            <span>slope: {t.slope}</span>
-                                                            <span>momentum: {t.momentum}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="trend-confidence" style={{ color: 'var(--negative)' }}>
-                                                        {(t.confidence * 100).toFixed(0)}%
-                                                    </div>
-                                                </div>
-                                            )) : (
-                                                <div className="empty-state">
-                                                    <div className="empty-state-icon">📉</div>
-                                                    <div className="empty-state-text">No falling trends detected</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ═══════════════════════════════════════════════
-                            TAB: ANOMALIES (Z-Score Detection)
-                           ═══════════════════════════════════════════════ */}
-                            {activeTab === 'anomalies' && (
-                                <div className="main-content single-column">
-                                    <div className="section glass-panel">
-                                        <div className="section-title">
-                                            <Shield size={18} color="var(--warning)" />
-                                            AI Anomaly Detection
-                                            <span className="section-title-count">(Z-Score Statistical Analysis — {anomalies.critical_count} critical, {anomalies.warning_count} warnings)</span>
-                                        </div>
-                                        <div className="anomaly-list">
-                                            {anomalies.anomalies && anomalies.anomalies.length > 0 ? anomalies.anomalies.map((a, i) => (
-                                                <div key={i} className={`anomaly-card glass-card ${a.severity}`}>
-                                                    <div className="anomaly-icon">
-                                                        {a.severity === 'critical' ? '🚨' : '⚠️'}
-                                                    </div>
-                                                    <div className="anomaly-content">
-                                                        <div className="anomaly-message">{a.message}</div>
-                                                        <div className="anomaly-meta">
-                                                            <span className={`anomaly-severity ${a.severity}`}>{a.severity}</span>
-                                                            <span>Type: {a.metric}</span>
-                                                            {a.z_score && <span>Z-Score: {a.z_score}</span>}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )) : (
-                                                <div className="empty-state">
-                                                    <div className="empty-state-icon">✅</div>
-                                                    <div className="empty-state-text">No anomalies detected — all systems nominal</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </>
                     )}
-                </div>
-            )}
-
-            {/* ── Chatbot ─── */}
-            <div className="chatbot-trigger" onClick={() => setIsChatOpen(!isChatOpen)}>
-                <Sparkles size={24} />
-            </div>
-
-            {isChatOpen && (
-                <div className="chatbot-window glass-panel">
-                    <div className="chat-header">
-                        <span>Intelligence Core</span>
-                        <ChevronDown size={14} style={{ cursor: 'pointer' }} onClick={() => setIsChatOpen(false)} />
-                    </div>
-                    <div className="chat-messages">
-                        {chatMessages.map((msg, i) => (
-                            <div key={i} className={`chat-msg ${msg.role}`}>
-                                {msg.text}
-                            </div>
-                        ))}
-                    </div>
-                    <form className="chat-input-area" onSubmit={handleChatSubmit}>
-                        <input
-                            type="text"
-                            placeholder="Ask the oracle..."
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                        />
-                        <button type="submit" style={{ background: 'var(--accent-purple)', border: 'none', color: '#fff', borderRadius: '4px', padding: '0 10px', cursor: 'pointer' }}>
-                            <ChevronUp size={14} />
-                        </button>
-                    </form>
                 </div>
             )}
         </>

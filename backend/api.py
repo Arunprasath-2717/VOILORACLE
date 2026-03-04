@@ -17,7 +17,6 @@ from backend import trend_engine  # type: ignore
 from backend import anomaly_engine  # type: ignore
 from backend import summarizer  # type: ignore
 from backend import pipeline  # type: ignore
-from backend import gemini_engine  # type: ignore
 from backend import sector_router  # type: ignore
 from backend import model_router  # type: ignore
 import threading
@@ -210,29 +209,6 @@ def get_status():
         "database_path": str(config.DB_PATH)
     }
 
-
-class ChatRequest(BaseModel):
-    message: str
-    history: list = []
-
-
-@app.post("/api/ai/chat")
-def chat_with_oracle(req: ChatRequest):
-    """Chat with the VOILORACLE Intelligence Core using Gemini."""
-    system_instruction = (
-        "You are the VOILORACLE Intelligence Core, a state-of-the-art AI monitoring global signals. "
-        "You are professional, analytical, and sharp. Use the data provided in the user's query if available. "
-        "Keep responses concise and impactful."
-    )
-
-    context = ""
-    if "sentiment" in req.message.lower() or "market" in req.message.lower():
-        sd = database.get_sentiment_distribution()
-        context = "\nCurrent Global Sentiment Distribution: " + json.dumps(sd)
-
-    prompt = req.message + context
-    response = gemini_engine.generate_response(prompt, system_instruction)
-    return {"response": response}
 
 
 # -- AI Endpoints -------------------------------------------------------------
