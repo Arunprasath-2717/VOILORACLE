@@ -18,6 +18,8 @@ from backend import anomaly_engine  # type: ignore
 from backend import summarizer  # type: ignore
 from backend import pipeline  # type: ignore
 from backend import gemini_engine  # type: ignore
+from backend import sector_router  # type: ignore
+from backend import model_router  # type: ignore
 import threading
 from pydantic import BaseModel  # type: ignore
 
@@ -356,4 +358,155 @@ def get_ai_summary():
         "positive_pct": pos_pct,
         "negative_pct": neg_pct,
         "total_articles": ac
+    }
+
+
+# -- Sector & Model Router Endpoints -----------------------------------------
+
+@app.get("/api/ai/sectors")
+def get_sector_distribution():
+    """Get article distribution by sector from recent pipeline data."""
+    articles = database.get_recent_articles(200)
+    enriched = []
+    i = 0
+    while i < len(articles):
+        a = articles[i]
+        enriched.append({
+            "title": a.get("title", ""),
+            "description": a.get("description", ""),
+            "clean_text": str(a.get("title", "")) + ". " + str(a.get("description", "")),
+        })
+        i = i + 1
+    # Classify sectors
+    enriched = sector_router.route_articles(enriched)
+    dist = sector_router.get_sector_distribution(enriched)
+    # Build response
+    total = len(enriched)
+    result = []
+    for sector, count in sorted(dist.items(), key=lambda x: -x[1]):
+        pct = _round_dp(float(count) / float(total) * 100.0, 1) if total > 0 else 0.0
+        result.append({
+            "sector": sector,
+            "count": count,
+            "percentage": pct
+        })
+    return {
+        "sectors": result,
+        "total_articles": total
+    }
+
+
+@app.get("/api/ai/models")
+def get_ai_models():
+    """Get information about all registered sector-specific AI models."""
+    return model_router.get_model_info()
+
+
+@app.get("/api/ai/intelligence")
+def get_intelligence_output(limit: int = 25):
+    """Get structured intelligence output for recent events."""
+    events = database.get_all_events(limit)
+    articles = database.get_recent_articles(200)
+
+    # Reconstruct articles with sentiment + impacts + sectors
+    enriched_articles = []
+    i = 0
+    while i < len(articles):
+        a = articles[i]
+        impacts_raw = a.get("impacts_json", "[]")
+        if isinstance(impacts_raw, str):
+            try:
+                impacts_parsed = json.loads(impacts_raw)
+            except Exception:
+                impacts_parsed = []
+        else:
+            impacts_parsed = impacts_raw if impacts_raw else []
+
+        enriched = {
+            "title": a.get("title", ""),
+            "description": a.get("description", ""),
+            "clean_text": str(a.get("title", "")) + ". " + str(a.get("description", "")),
+            "source": a.get("source", "Unknown"),
+            "url": a.get("url", ""),
+            "sentiment": {
+                "label": a.get("sentiment_label", "Neutral"),
+                "compound": a.get("sentiment_score", 0.0)
+            },
+            "impacts": impacts_parsed,
+        }
+
+        # Classify sector on the fly
+        sector_info = sector_router.classify_sector(enriched["clean_text"])
+        enriched["sector"] = sector_info["sector"]
+        enriched["sector_confidence"] = sector_info["confidence"]
+
+        enriched_articles.append(enriched)
+        i = i + 1
+
+    # Build intelligence output for each event
+    intelligence_items = []
+    ev_idx = 0
+    while ev_idx < len(events):
+        ev = events[ev_idx]
+        try:
+            aids_json = ev.get("article_ids_json", "[]")
+            aids = json.loads(aids_json) if isinstance(aids_json, str) else []
+        except Exception:
+            aids = []
+
+        # Map event article IDs to enriched articles (best-effort matching)
+        event_data = {
+            "event_id": ev.get("event_id", ""),
+            "label": ev.get("label", "Unknown Event"),
+            "size": ev.get("size", 1),
+            "is_cluster": bool(ev.get("is_cluster", 0)),
+            "article_indices": list(range(min(ev.get("size", 1), len(enriched_articles)))),
+            "ai_summary": "",
+            "importance_score": ev.get("importance_score", 0),
+            "risk_score": ev.get("risk_score", 0),
+        }
+
+        output = model_router.generate_intelligence_output(event_data, enriched_articles)
+
+        # Include original event metadata
+        output["event_id"] = ev.get("event_id", "")
+        output["size"] = ev.get("size", 1)
+        output["is_cluster"] = bool(ev.get("is_cluster", 0))
+        output["sentiment_score"] = ev.get("sentiment_score", 0.0)
+
+        intelligence_items.append(output)
+        ev_idx = ev_idx + 1
+
+    return {
+        "intelligence": intelligence_items,
+        "total_events": len(events),
+        "total_articles": len(articles)
+    }
+
+
+class AnalyzeRequest(BaseModel):
+    text: str
+    title: str = ""
+
+
+@app.post("/api/ai/analyze")
+def analyze_text(req: AnalyzeRequest):
+    """On-demand analysis: classify sector and route to AI model."""
+    # Classify sector
+    sector_info = sector_router.classify_sector(req.text)
+
+    # Run through model router
+    analysis = model_router.analyze_with_model(
+        text=req.text,
+        sector=sector_info["sector"],
+        sentiment={"label": "Neutral", "compound": 0.0},
+        title=req.title,
+    )
+
+    return {
+        "sector": sector_info["sector"],
+        "sector_confidence": sector_info["confidence"],
+        "sector_scores": sector_info["scores"],
+        "sector_keywords": sector_info["matched_keywords"],
+        "analysis": analysis
     }

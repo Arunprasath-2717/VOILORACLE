@@ -22,6 +22,30 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    """Return True if column exists in table."""
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return any(row[1] == column for row in rows)
+
+
+def migrate_db(conn: sqlite3.Connection):
+    """Apply safe ALTER TABLE migrations for schema additions."""
+    migrations = [
+        ("events", "importance_score", "ALTER TABLE events ADD COLUMN importance_score REAL DEFAULT 0.0"),
+        ("events", "risk_score",       "ALTER TABLE events ADD COLUMN risk_score REAL DEFAULT 0.0"),
+        ("events", "impact_json",      "ALTER TABLE events ADD COLUMN impact_json TEXT DEFAULT '[]'"),
+        ("articles", "url",            "ALTER TABLE articles ADD COLUMN url TEXT DEFAULT ''"),
+    ]
+    for table, col, sql in migrations:
+        if not _column_exists(conn, table, col):
+            try:
+                conn.execute(sql)
+                conn.commit()
+                logger.info("Migration applied: added %s.%s", table, col)
+            except Exception as e:
+                logger.warning("Migration skipped (%s.%s): %s", table, col, e)
+
+
 def init_db():
     conn = get_connection()
     try:
@@ -55,6 +79,7 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_articles_sentiment ON articles(sentiment_label);
         """)
         conn.commit()
+        migrate_db(conn)
         logger.info("Database initialized: %s", config.DB_PATH)
     finally:
         conn.close()

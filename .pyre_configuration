@@ -1,17 +1,18 @@
 {
     "site_package_search_strategy": "pep561",
     "search_path": [
-        "."
+        ".",
+        "e:\\VOILORACLE EE Project"
     ],
     "source_directories": [
         "."
     ],
-    "venv_path": ".venv",
     "strict": false,
     "exclude": [
         ".venv",
         "node_modules",
         "__pycache__",
-        "frontend/dist"
+        "frontend/dist",
+        "tmp"
     ]
 }

@@ -26,6 +26,23 @@ NEWSDATA_API_KEY = os.getenv("NEWSDATA_API_KEY", "pub_31f036a4c7674f828afcb68314
 GDELT_API_URL = "https://api.gdeltproject.org/api/v2/doc/doc?query=news&mode=ArtList&maxrecords=100&format=json"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyB7h-2DI8kTO5csXCXkv30auwqRxesKm8I")
 
+# ── Hugging Face API Token (for large model inference) ────────────────────────
+HF_API_TOKEN = os.getenv("HF_API_TOKEN", "")
+
+# ── Sector-Specific AI Model IDs ─────────────────────────────────────────────
+SECTOR_MODELS = {
+    "finance":    "ProsusAI/finbert",
+    "technology": "Qwen/Qwen2-7B-Instruct",
+    "politics":   "mistralai/Mistral-7B-Instruct-v0.3",
+    "business":   "deepseek-ai/deepseek-llm-7b-chat",
+    "health":     "microsoft/BioGPT-Large",
+    "general":    "meta-llama/Llama-3-8B-Instruct",
+}
+
+# ── Core NLP Model IDs ──────────────────────────────────────────────────────
+SENTIMENT_MODEL = "cardiffnlp/twitter-roberta-base-sentiment"
+NER_MODEL = "en_core_web_sm"  # spaCy model
+
 # ── Collection Settings ──────────────────────────────────────────────────────
 FETCH_INTERVAL_SECONDS = 300
 MAX_ARTICLES_PER_FETCH = 50
