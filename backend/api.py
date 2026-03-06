@@ -6,7 +6,7 @@ NER entities, trend forecasts, anomaly alerts, and AI summaries.
 
 from datetime import datetime
 
-from fastapi import FastAPI  # type: ignore
+from fastapi import FastAPI, HTTPException  # type: ignore
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
 import json
 
@@ -63,57 +63,71 @@ def startup_event():
 
 @app.get("/api/metrics")
 def get_metrics():
-    ac = database.get_article_count()
-    events = database.get_all_events(100)
-    sd = database.get_sentiment_distribution()
-    return {
-        "article_count": ac,
-        "event_count": len(events),
-        "sentiment_distribution": sd
-    }
+    try:
+        ac = database.get_article_count()
+        events = database.get_all_events(100)
+        sd = database.get_sentiment_distribution()
+        return {
+            "article_count": ac,
+            "event_count": len(events),
+            "sentiment_distribution": sd
+        }
+    except Exception as e:
+        import logging
+        logging.error("Error fetching metrics: %s", str(e))
+        raise HTTPException(status_code=500, detail=f"Error fetching metrics: {str(e)}")
 
 
 @app.get("/api/events")
 def get_events(limit=25):
-    events = database.get_all_events(limit)
-    res = []
-    ev_idx = 0
-    while ev_idx < len(events):
-        ev = events[ev_idx]
-        try:
-            aids = json.loads(ev.get("article_ids_json", "[]"))
-        except Exception:
-            aids = []
+    try:
+        events = database.get_all_events(limit)
+        res = []
+        ev_idx = 0
+        while ev_idx < len(events):
+            ev = events[ev_idx]
+            try:
+                aids = json.loads(ev.get("article_ids_json", "[]"))
+            except Exception:
+                aids = []
 
-        articles = []
-        if aids:
-            limited_aids = _first_n(aids, 8)
-            la_articles = database.get_articles_by_ids(limited_aids)
-            la_idx = 0
-            while la_idx < len(la_articles):
-                la = la_articles[la_idx]
-                articles.append({
-                    "title": la.get("title", ""),
-                    "sentiment_label": la.get("sentiment_label", "Neutral"),
-                    "source": la.get("source", ""),
-                    "url": la.get("url", "")
-                })
-                la_idx = la_idx + 1
+            articles = []
+            if aids:
+                limited_aids = _first_n(aids, 8)
+                la_articles = database.get_articles_by_ids(limited_aids)
+                la_idx = 0
+                while la_idx < len(la_articles):
+                    la = la_articles[la_idx]
+                    articles.append({
+                        "title": la.get("title", ""),
+                        "sentiment_label": la.get("sentiment_label", "Neutral"),
+                        "source": la.get("source", ""),
+                        "url": la.get("url", ""),
+                        "fake_news_label": la.get("fake_news_label", "Real"),
+                        "fake_news_score": la.get("fake_news_score", 1.0)
+                    })
+                    la_idx = la_idx + 1
 
-        res.append({
-            "id": ev["event_id"],
-            "label": ev["label"],
-            "size": ev["size"],
-            "is_cluster": ev["is_cluster"],
-            "sentiment_label": ev["sentiment_label"],
-            "sentiment_score": ev.get("sentiment_score", 0),
-            "importance_score": ev.get("importance_score", 0),
-            "risk_score": ev.get("risk_score", 0),
-            "impacts": json.loads(ev.get("impact_json", "[]")),
-            "articles": articles
-        })
-        ev_idx = ev_idx + 1
-    return res
+            res.append({
+                "id": ev["event_id"],
+                "label": ev["label"],
+                "size": ev["size"],
+                "is_cluster": ev["is_cluster"],
+                "sentiment_label": ev["sentiment_label"],
+                "sentiment_score": ev.get("sentiment_score", 0),
+                "importance_score": ev.get("importance_score", 0),
+                "risk_score": ev.get("risk_score", 0),
+                "impacts": json.loads(ev.get("impact_json", "[]")),
+                "lifecycle": ev.get("lifecycle", "emerging"),
+                "weight_score": ev.get("weight_score", 0.0),
+                "articles": articles
+            })
+            ev_idx = ev_idx + 1
+        return res
+    except Exception as e:
+        import logging
+        logging.error("Error fetching events: %s", str(e))
+        raise HTTPException(status_code=500, detail=f"Error fetching events: {str(e)}")
 
 
 @app.get("/api/articles")
@@ -130,7 +144,9 @@ def get_articles(limit=100):
             "source": a["source"],
             "sentiment_label": a["sentiment_label"],
             "sentiment_score": _round_dp(score, 3),
-            "published_at": a["published_at"]
+            "published_at": a["published_at"],
+            "fake_news_label": a.get("fake_news_label", "Real"),
+            "fake_news_score": a.get("fake_news_score", 1.0)
         })
         i = i + 1
     return result

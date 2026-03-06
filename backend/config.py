@@ -11,7 +11,7 @@ import os
 import random
 import uuid
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore
 from datetime import datetime, timedelta
 
 # ── Load .env from project root ──────────────────────────────────────────────
@@ -269,7 +269,7 @@ def generate_sample_data(count=50):
             "title": title,
             "description": f"In a surprising turn of events, {subj.lower()} {act.lower()} operations related to {base.lower()}, impacting global developments significantly. " + " ".join(random.sample(KEYWORDS_POOL, 5)),
             "source": random.choice(SOURCES),
-            "url": f"https://example.com/article/{uuid.uuid4().hex[:8]}",
+            "url": f"https://example.com/article/{str(uuid.uuid4().hex)[:8]}",
             "published_at": (base_time - timedelta(minutes=random.randint(1, 10000))).isoformat() + "Z"
         })
     return articles

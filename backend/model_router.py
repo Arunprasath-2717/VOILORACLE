@@ -16,6 +16,7 @@ Sector → Model mapping:
 import logging
 import os
 from typing import List, Dict, Any, Optional
+from functools import lru_cache
 
 logger = logging.getLogger("veiloracle.model_router")
 
@@ -91,6 +92,10 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
 # ── Loaded model cache ───────────────────────────────────────────────────────
 _loaded_models: Dict[str, Any] = {}
 
+# ── Analysis result cache (LRU-style) ─────────────────────────────────────────
+_analysis_cache: Dict[str, Dict[str, Any]] = {}
+_cache_max_size: int = 1000
+
 
 def _truncate(text: str, max_len: int) -> str:
     """Pyre-safe string truncation."""
@@ -98,6 +103,36 @@ def _truncate(text: str, max_len: int) -> str:
         return text
     result: List[str] = []
     i: int = 0
+    while i < max_len:
+        result.append(text[i])
+        i = i + 1
+    return "".join(result)
+
+
+def _get_cache_key(text: str, sector: str) -> str:
+    """Generate cache key for analysis results."""
+    # Use hash of text and sector to create a cache key
+    import hashlib
+    text_hash = hashlib.md5(text.encode()).hexdigest()[:16]
+    return sector + "_" + text_hash
+
+
+def _get_cached_analysis(text: str, sector: str) -> Optional[Dict[str, Any]]:
+    """Retrieve cached analysis result if available."""
+    cache_key = _get_cache_key(text, sector)
+    return _analysis_cache.get(cache_key)
+
+
+def _cache_analysis_result(text: str, sector: str, result: Dict[str, Any]) -> None:
+    """Store analysis result in cache with size management."""
+    global _analysis_cache
+    if len(_analysis_cache) >= _cache_max_size:
+        # Remove oldest entry (simple FIFO)
+        first_key = next(iter(_analysis_cache))
+        del _analysis_cache[first_key]
+    
+    cache_key = _get_cache_key(text, sector)
+    _analysis_cache[cache_key] = result
     while i < max_len:
         result.append(text[i])
         i = i + 1
@@ -391,7 +426,14 @@ def analyze_with_model(
 ) -> Dict[str, Any]:
     """
     Route text to the appropriate sector-specific model for deep analysis.
+    Uses caching to avoid reprocessing identical texts.
     """
+    # Check cache first
+    cached_result = _get_cached_analysis(text, sector)
+    if cached_result is not None:
+        logger.debug("Cache hit for sector %s", sector)
+        return cached_result
+    
     model_info: Dict[str, Any] = MODEL_REGISTRY.get(sector, MODEL_REGISTRY["general"])
     model_id: str = str(model_info["model_id"])
     model_type: str = str(model_info["model_type"])
@@ -453,6 +495,9 @@ def analyze_with_model(
     final_result["sector"] = sector
     final_result["target_model"] = model_id
 
+    # Store result in cache for future lookups
+    _cache_analysis_result(text, sector, final_result)
+    
     return final_result
 
 

@@ -407,13 +407,16 @@ function App() {
                                                             <div className={`event-sentiment-badge badge-${(ev.sentiment_label || 'neutral').toLowerCase()}`}>
                                                                 {ev.sentiment_label}
                                                             </div>
+                                                            <div className={`event-sentiment-badge`} style={{ background: 'var(--accent-purple)', color: 'white' }}>
+                                                                Lifecycle: {(ev.lifecycle || 'emerging').toUpperCase()}
+                                                            </div>
                                                             <div className="event-impacts">
                                                                 {ev.impacts?.map((imp, idx) => (
                                                                     <span key={idx} className={`impact-chip ${imp.direction.toLowerCase()}`}>
                                                                         {imp.sector} {imp.direction === 'Bullish' ? '↑' : '↓'}
                                                                     </span>
                                                                 ))}
-                                                                {ev.size > 1 && <span className="entity-chip"><Globe size={10} /> {ev.size} signals</span>}
+                                                                {ev.size > 1 && <span className="entity-chip"><Globe size={10} /> {ev.size} signals (Weight: {ev.weight_score?.toFixed(2) || '1.00'})</span>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -552,6 +555,9 @@ function App() {
                                                             <span className="article-source-badge">{art.source}</span>
                                                             <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>
                                                                 {art.sentiment_label}
+                                                            </span>
+                                                            <span className={`badge ${art.fake_news_label === 'Fake' ? 'badge-negative' : 'badge-neutral'}`} style={{ border: art.fake_news_label === 'Fake' ? '1px solid #ff5252' : '1px solid var(--accent-cyan)' }}>
+                                                                {art.fake_news_label === 'Fake' ? '🚨 Disinformation Flags' : 'Verified Real'} ({(art.fake_news_score * 100).toFixed(0)}%)
                                                             </span>
                                                             <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontFamily: "'JetBrains Mono', monospace" }}>
                                                                 Score: {(art.sentiment_score || 0).toFixed(2)}

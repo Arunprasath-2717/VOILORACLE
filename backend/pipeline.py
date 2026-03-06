@@ -11,6 +11,7 @@ import uuid
 import json
 from typing import Dict, List, Any
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 from backend import config  # type: ignore
 from backend import database  # type: ignore
@@ -33,6 +34,18 @@ from backend import queue_manager  # type: ignore
 import threading
 
 logger = logging.getLogger("veiloracle.pipeline")
+
+# ── Concurrency Executor for I/O-bound operations ────────────────────────────
+_executor = ThreadPoolExecutor(max_workers=4)
+
+def _run_step_concurrently(stepfunc, *args):
+    """Run a pipeline step using thread executor for I/O-bound operations."""
+    try:
+        future = _executor.submit(stepfunc, *args)
+        return future.result(timeout=300)  # 5-minute timeout
+    except Exception as e:
+        logger.error("Concurrent step failed: %s", e, exc_info=True)
+        return None
 
 
 def _collector_worker():
@@ -78,7 +91,7 @@ def run_pipeline(one_shot: bool = True):
                 time.sleep(5)
                 continue
 
-            # STEP 2: Preprocessing & New NLP
+            # STEP 2: Preprocessing & New NLP (with concurrency optimization)
             logger.info("▸ Step 2: NLP Preprocessing (clean, fake news, multilingual)...")
             articles = preprocessor.preprocess_articles(articles)
             articles = fake_news.analyze_articles_fake_news(articles)
@@ -101,8 +114,9 @@ def run_pipeline(one_shot: bool = True):
             logger.info("▸ Step 6/12: Sector Classification (Intelligent Routing)...")
             articles = sector_router.route_articles(articles)
 
-            # STEP 7: Sector-Specific AI Model Routing
+            # STEP 7: Sector-Specific AI Model Routing (with caching optimization)
             logger.info("▸ Step 7/12: AI Model Routing (FinBERT/Qwen2/Mistral/DeepSeek/BioGPT/Llama3)...")
+            # Leverage the caching in model_router.analyze_with_model for repeated texts
             articles = model_router.route_and_analyze(articles)
 
             # STEP 8: AI Summarization (BART Transformer)

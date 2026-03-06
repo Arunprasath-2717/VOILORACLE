@@ -6,12 +6,13 @@ Includes deduplication, source credibility, time decay, and lifecycle tracking.
 """
 
 import logging
-import numpy as np
-import hdbscan
-from sklearn.metrics.pairwise import cosine_similarity, cosine_distances
+from typing import Any, List, Dict, Set
+import numpy as np  # type: ignore
+import hdbscan  # type: ignore
+from sklearn.metrics.pairwise import cosine_similarity, cosine_distances  # type: ignore
 from datetime import datetime
 
-from backend import config
+from backend import config  # type: ignore
 
 logger = logging.getLogger("veiloracle.detector")
 
@@ -20,7 +21,7 @@ _model = None
 def _get_model():
     global _model
     if _model is None:
-        from sentence_transformers import SentenceTransformer
+        from sentence_transformers import SentenceTransformer  # type: ignore
         logger.info("Loading embedding model: %s", config.EMBEDDING_MODEL)
         _model = SentenceTransformer(config.EMBEDDING_MODEL)
     return _model
@@ -31,15 +32,15 @@ def generate_embeddings(texts: list[str]) -> np.ndarray:
     logger.info("Embeddings: shape %s", embeddings.shape)
     return embeddings
 
-def detect_duplicates(articles: list[dict], embeddings: np.ndarray) -> list[int]:
+def detect_duplicates(articles: List[Dict[str, Any]], embeddings: Any) -> List[int]:
     """Flag duplicate articles using cosine similarity > 0.95"""
     sim_matrix = cosine_similarity(embeddings)
-    duplicates = set()
+    duplicates: Set[int] = set()
     for i in range(len(articles)):
         if i in duplicates:
             continue
         for j in range(i + 1, len(articles)):
-            if sim_matrix[i, j] > 0.95:
+            if sim_matrix[i, j] > 0.95:  # type: ignore
                 duplicates.add(j)
     return list(duplicates)
 
@@ -64,7 +65,7 @@ def _calculate_weights(articles: list[dict]) -> np.ndarray:
                 # Naive parse, assumes ISO format
                 pub = datetime.fromisoformat(pub_str.replace('Z', '+00:00'))
                 dt = (now - pub.replace(tzinfo=None)).total_seconds() / 3600
-                hours_diff = max(0, dt)
+                hours_diff = float(max(0.0, dt))
             except:
                 pass
         decay_weight = np.exp(-0.05 * hours_diff) # Half-life ~14 hours
@@ -86,7 +87,8 @@ def cluster_articles(embeddings: np.ndarray) -> np.ndarray:
         metric="precomputed"
     )
     labels = clusterer.fit_predict(distance_matrix.astype(np.float64))
-    logger.info("HDBSCAN: %d clusters, %d noise", len(set(labels) - {-1}), (labels == -1).sum())
+    noise_count = int(sum(1 for x in labels if x == -1))
+    logger.info("HDBSCAN: %d clusters, %d noise", len(set(labels) - {-1}), noise_count)
     return labels
 
 def _find_representative(indices: list[int], embeddings: np.ndarray) -> int:
@@ -126,9 +128,11 @@ def detect_events(articles: list[dict]) -> list[dict]:
     
     # Store embeddings and update articles in-place to remove docs
     for i, orig_idx in enumerate(valid_indices):
-        articles[orig_idx]["embedding"] = all_embeddings[orig_idx].tolist()
+        articles[orig_idx]["embedding"] = all_embeddings[orig_idx].tolist()  # type: ignore
         
-    articles[:] = [articles[i] for i in valid_indices]
+    updated = [articles[i] for i in valid_indices]
+    articles.clear()
+    articles.extend(updated)
     
     # 2. Cluster
     labels = cluster_articles(embeddings)
@@ -146,7 +150,7 @@ def detect_events(articles: list[dict]) -> list[dict]:
                     "label": articles[i].get("title", ""),
                     "article_indices": [i], 
                     "size": 1, 
-                    "weight_score": round(float(weights[i]), 4),
+                    "weight_score": round(float(weights[i]), 4),  # type: ignore
                     "representative_idx": i, 
                     "is_cluster": False,
                     "lifecycle": "emerging"
@@ -161,16 +165,16 @@ def detect_events(articles: list[dict]) -> list[dict]:
         
         ages_hours = []
         for orig_idx in cluster_valid_idx:
-            pub_str = articles[orig_idx].get("published_at")
+            pub_str = str(articles[orig_idx].get("published_at", ""))
             if pub_str:
                 try:
                     pub = datetime.fromisoformat(pub_str.replace('Z', '+00:00'))
                     dt = (now - pub.replace(tzinfo=None)).total_seconds() / 3600
-                    ages_hours.append(max(0, dt))
+                    ages_hours.append(float(max(0.0, dt)))
                 except:
-                    ages_hours.append(12)
+                    ages_hours.append(12.0)
             else:
-                ages_hours.append(12)
+                ages_hours.append(12.0)
                 
         avg_age = sum(ages_hours) / len(ages_hours) if ages_hours else 12
         lifecycle = _determine_lifecycle(len(cluster_valid_idx), avg_age)
@@ -180,7 +184,7 @@ def detect_events(articles: list[dict]) -> list[dict]:
             "label": label,
             "article_indices": cluster_valid_idx, 
             "size": len(cluster_valid_idx), 
-            "weight_score": round(cluster_weight, 4),
+            "weight_score": round(cluster_weight, 4),  # type: ignore
             "representative_idx": rep_orig_idx, 
             "is_cluster": True,
             "lifecycle": lifecycle

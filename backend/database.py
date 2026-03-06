@@ -136,7 +136,7 @@ def save_events(events: list, article_db_ids: list, articles: list, pipeline_run
                  int(event.get("is_cluster", False)),
                  event.get("lifecycle", "emerging"),
                  float(event.get("weight_score", 0.0)),
-                 label, round(avg, 4),
+                 label, round(float(avg), 4),  # type: ignore
                  float(event.get("importance_score", 0.0)),
                  float(event.get("risk_score", 0.0)),
                  json.dumps(event.get("impact_json", [])),
@@ -149,7 +149,7 @@ def save_events(events: list, article_db_ids: list, articles: list, pipeline_run
 
 def save_impacts(articles: list, article_db_ids: list, pipeline_run_id: str = ""):
     conn = get_connection()
-    count = 0
+    count: int = 0
     try:
         for i, article in enumerate(articles):
             aid = article_db_ids[i] if i < len(article_db_ids) else None
@@ -160,7 +160,7 @@ def save_impacts(articles: list, article_db_ids: list, pipeline_run_id: str = ""
                     (aid, imp.get("sector", ""), imp.get("direction", ""),
                      imp.get("strength", "Neutral"), float(imp.get("confidence", 0.0)),
                      ", ".join(imp.get("matched_keywords", [])), pipeline_run_id))
-                count += 1
+                count += 1  # type: ignore
         conn.commit()
         logger.info("Saved %d impacts.", count)
     finally:
@@ -206,6 +206,7 @@ def get_article_count() -> int:
         return 0
     finally:
         conn.close()
+    return 0
 
 
 def get_recent_articles(limit: int = 50) -> list:
@@ -218,6 +219,7 @@ def get_recent_articles(limit: int = 50) -> list:
         return []
     finally:
         conn.close()
+    return []
 
 
 def get_all_events(limit: int = 100) -> list:
@@ -231,6 +233,7 @@ def get_all_events(limit: int = 100) -> list:
         return []
     finally:
         conn.close()
+    return []
 
 
 def get_sentiment_distribution() -> dict:
@@ -245,6 +248,7 @@ def get_sentiment_distribution() -> dict:
         return {"Positive": 0, "Negative": 0, "Neutral": 0}
     finally:
         conn.close()
+    return {"Positive": 0, "Negative": 0, "Neutral": 0}
 
 
 def get_sector_impact_summary() -> list:
@@ -261,6 +265,7 @@ def get_sector_impact_summary() -> list:
         return []
     finally:
         conn.close()
+    return []
 
 
 def get_recent_pipeline_runs(limit: int = 10) -> list:
@@ -274,6 +279,7 @@ def get_recent_pipeline_runs(limit: int = 10) -> list:
         return []
     finally:
         conn.close()
+    return []
 
 
 def get_articles_by_ids(article_ids: list) -> list:
@@ -290,3 +296,4 @@ def get_articles_by_ids(article_ids: list) -> list:
         return []
     finally:
         conn.close()
+    return []
