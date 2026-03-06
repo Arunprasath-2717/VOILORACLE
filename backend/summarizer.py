@@ -19,9 +19,9 @@ def _get_summarizer():
     if _summarizer is None:
         try:
             from transformers import pipeline
-            logger.info("Loading BART summarization model (this may take a moment)...")
-            _summarizer = pipeline("summarization", model="facebook/bart-large-cnn", device=-1)
-            logger.info("BART summarization model loaded successfully.")
+            logger.info("Loading PEGASUS summarization model (this may take a moment)...")
+            _summarizer = pipeline("summarization", model="google/pegasus-xsum", device=-1)
+            logger.info("PEGASUS summarization model loaded successfully.")
         except Exception as e:
             logger.warning("Transformers not available (%s), using extractive fallback.", e)
             _use_transformers = False

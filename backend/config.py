@@ -15,12 +15,17 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
 # ── Load .env from project root ──────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).parent.parent.resolve()
+DATA_DIR = BASE_DIR / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 load_dotenv(BASE_DIR / ".env")
 
-DB_PATH = BASE_DIR / "veiloracle.db"
+DB_PATH = DATA_DIR / "intelligence.db"
 
-# ── API Keys ─────────────────────────────────────────────────────────────────
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/veiloracle")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# ── API Keys & Credentials ─────────────────────────────────────────────────────────────────
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "")
 NEWSDATA_API_KEY = os.getenv("NEWSDATA_API_KEY", "pub_31f036a4c7674f828afcb683142d491b")
 GDELT_API_URL = "https://api.gdeltproject.org/api/v2/doc/doc?query=news&mode=ArtList&maxrecords=100&format=json"
@@ -84,10 +89,22 @@ RSS_FEEDS = [
     "https://news.google.com/rss/search?q=site:reuters.com&hl=en&gl=US&ceid=US:en",
 ]
 
-# ── Clustering (DBSCAN) ─────────────────────────────────────────────────────
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-DBSCAN_EPS = 0.45
-DBSCAN_MIN_SAMPLES = 2
+# ── Artificial Intelligence Models \u0026 Clustering ─────────────────────────────
+EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
+HDBSCAN_MIN_CLUSTER_SIZE = 2
+HDBSCAN_MIN_SAMPLES = 1
+
+# ── Source Credibility Database ──────────────────────────────────────────────
+SOURCE_CREDIBILITY = {
+    "reuters": 0.95,
+    "bbc": 0.90,
+    "bbci": 0.90,
+    "bloomberg": 0.92,
+    "nytimes": 0.94,
+    "aljazeera": 0.88,
+    "google": 0.85
+}
+DEFAULT_CREDIBILITY = 0.30
 
 # ── Sentiment Thresholds ─────────────────────────────────────────────────────
 POSITIVE_THRESHOLD = 0.05

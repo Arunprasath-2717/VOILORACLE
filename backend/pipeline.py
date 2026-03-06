@@ -26,15 +26,36 @@ from backend import anomaly_engine  # type: ignore
 from backend import intelligence  # type: ignore
 from backend import sector_router  # type: ignore
 from backend import model_router  # type: ignore
+from backend import fake_news  # type: ignore
+from backend import topic_discovery  # type: ignore
+from backend import multilingual  # type: ignore
+from backend import queue_manager  # type: ignore
+import threading
 
 logger = logging.getLogger("veiloracle.pipeline")
 
 
+def _collector_worker():
+    while True:
+        try:
+            articles = collector.collect_news()
+            queue_manager.push_articles(articles)
+        except Exception as e:
+            logger.error("Collector thread error: %s", e)
+        time.sleep(config.FETCH_INTERVAL_SECONDS)
+
 def run_pipeline(one_shot: bool = True):
     database.init_db()
     logger.info("=" * 60)
-    logger.info("VEILORACLE Intelligence Pipeline — Starting (Full AI Mode)")
+    logger.info("VEILORACLE Intelligence Pipeline — Streaming Starting")
     logger.info("=" * 60)
+    
+    if not one_shot:
+        t = threading.Thread(target=_collector_worker, daemon=True)
+        t.start()
+        logger.info("Background collector thread started.")
+    elif one_shot:
+        queue_manager.push_articles(collector.collect_news())
 
     iteration: int = 0
     while True:
@@ -49,20 +70,22 @@ def run_pipeline(one_shot: bool = True):
         database.start_pipeline_run(run_id)
 
         try:
-            # STEP 1: Collect News
-            logger.info("▸ Step 1/12: Collecting news (RSS + GDELT + APIs)...")
-            articles = collector.collect_news()
+            # STEP 1: Process items from stream
+            logger.info("▸ Step 1: Popping from message queue...")
+            articles = queue_manager.pop_articles(batch_size=50)
             if not articles:
-                database.finish_pipeline_run(run_id, 0, 0, "skipped", "No articles")
                 if one_shot: break
-                time.sleep(config.FETCH_INTERVAL_SECONDS); continue
+                time.sleep(5)
+                continue
 
-            # STEP 2: NLP Preprocessing
-            logger.info("▸ Step 2/12: NLP Preprocessing (tokenize, stopwords, clean)...")
+            # STEP 2: Preprocessing & New NLP
+            logger.info("▸ Step 2: NLP Preprocessing (clean, fake news, multilingual)...")
             articles = preprocessor.preprocess_articles(articles)
+            articles = fake_news.analyze_articles_fake_news(articles)
+            articles = multilingual.process_articles_multilingual(articles)
 
-            # STEP 3: Event Detection (Sentence Embeddings + DBSCAN)
-            logger.info("▸ Step 3/12: AI Event Detection (Embeddings + DBSCAN)...")
+            # STEP 3: Event Detection (Embeddings + HDBSCAN + Duplicate removal)
+            logger.info("▸ Step 3: AI Event Detection (Embeddings + HDBSCAN)...")
             events = detector.detect_events(articles)
 
             # STEP 4: Sentiment Analysis (RoBERTa)
@@ -99,9 +122,13 @@ def run_pipeline(one_shot: bool = True):
             anomaly_results = anomaly_engine.run_anomaly_detection(articles)
 
             # STEP 12: Trend Forecasting (Linear Regression)
-            logger.info("▸ Step 12/12: AI Trend Forecasting (Linear Regression)...")
+            logger.info("▸ Step 12: AI Trend Forecasting (Linear Regression)...")
             trend_results = trend_engine.analyze_sector_trends(articles)
             top_movers = trend_engine.get_top_movers(trend_results)
+            
+            # STEP 13: Topic Discovery
+            logger.info("▸ Step 13: Dynamic Topic Discovery (BERTopic)...")
+            topics = topic_discovery.discover_topics(articles)
 
             # Generate Intelligence Output (structured JSON per event)
             logger.info("▸ Generating structured intelligence output...")
@@ -136,8 +163,8 @@ def run_pipeline(one_shot: bool = True):
                 status = "✅ loaded" if info["loaded"] else "⚙️ available" if info["hf_api_available"] else "🔧 fallback"
                 logger.info("      %s → %s [%s]", sec, info["model_id"], status)
 
-            # Log intelligence output sample
             if intelligence_output:
+                logger.info("  📊 Topics Discovered: %d", len(topics.get("topics", [])))
                 sample: Dict[str, Any] = intelligence_output[0]
                 logger.info("  📊 Sample Intelligence Output:")
                 sample_title: str = str(sample.get("event_title", ""))

@@ -1,7 +1,8 @@
 """
-VEILORACLE — Database Layer
+VEILORACLE — Database Layer (SQLite + Upgraded Schema)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SQLite storage for articles, events, impacts, and pipeline runs.
+Includes new fields: lifecycle, weight_score, fake_news, embedding (as JSON blob).
 """
 
 import json
@@ -23,18 +24,21 @@ def get_connection() -> sqlite3.Connection:
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
-    """Return True if column exists in table."""
     rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
     return any(row[1] == column for row in rows)
 
 
 def migrate_db(conn: sqlite3.Connection):
-    """Apply safe ALTER TABLE migrations for schema additions."""
     migrations = [
         ("events", "importance_score", "ALTER TABLE events ADD COLUMN importance_score REAL DEFAULT 0.0"),
         ("events", "risk_score",       "ALTER TABLE events ADD COLUMN risk_score REAL DEFAULT 0.0"),
         ("events", "impact_json",      "ALTER TABLE events ADD COLUMN impact_json TEXT DEFAULT '[]'"),
+        ("events", "lifecycle",        "ALTER TABLE events ADD COLUMN lifecycle TEXT DEFAULT 'emerging'"),
+        ("events", "weight_score",     "ALTER TABLE events ADD COLUMN weight_score REAL DEFAULT 0.0"),
         ("articles", "url",            "ALTER TABLE articles ADD COLUMN url TEXT DEFAULT ''"),
+        ("articles", "fake_news_label","ALTER TABLE articles ADD COLUMN fake_news_label TEXT DEFAULT 'Real'"),
+        ("articles", "fake_news_score","ALTER TABLE articles ADD COLUMN fake_news_score REAL DEFAULT 1.0"),
+        ("articles", "embedding_json", "ALTER TABLE articles ADD COLUMN embedding_json TEXT DEFAULT ''"),
     ]
     for table, col, sql in migrations:
         if not _column_exists(conn, table, col):
@@ -55,10 +59,13 @@ def init_db():
                 source TEXT DEFAULT 'Unknown', url TEXT DEFAULT '', published_at TEXT,
                 clean_text TEXT DEFAULT '', sentiment_label TEXT DEFAULT 'Neutral',
                 sentiment_score REAL DEFAULT 0.0, impacts_json TEXT DEFAULT '[]',
+                fake_news_label TEXT DEFAULT 'Real', fake_news_score REAL DEFAULT 1.0,
+                embedding_json TEXT DEFAULT '',
                 created_at TEXT DEFAULT (datetime('now')), pipeline_run_id TEXT DEFAULT '');
             CREATE TABLE IF NOT EXISTS events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, event_id TEXT NOT NULL, label TEXT NOT NULL,
                 size INTEGER DEFAULT 1, is_cluster INTEGER DEFAULT 0,
+                lifecycle TEXT DEFAULT 'emerging', weight_score REAL DEFAULT 0.0,
                 sentiment_label TEXT DEFAULT 'Neutral', sentiment_score REAL DEFAULT 0.0,
                 importance_score REAL DEFAULT 0.0, risk_score REAL DEFAULT 0.0,
                 impact_json TEXT DEFAULT '[]',
@@ -85,26 +92,34 @@ def init_db():
         conn.close()
 
 
-def save_articles(articles: list[dict], pipeline_run_id: str = "") -> list[int]:  # type: ignore
+def save_articles(articles: list, pipeline_run_id: str = "") -> list:
     conn = get_connection()
-    ids = []
+    ids: list = []
     try:
         for a in articles:
             s = a.get("sentiment", {})
+            fn = a.get("fake_news_analysis", {})
+            emb = a.get("embedding")
+            emb_json = json.dumps(emb) if emb else ""
             cur = conn.execute(
-                "INSERT INTO articles (title,description,source,url,published_at,clean_text,sentiment_label,sentiment_score,impacts_json,pipeline_run_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                (a.get("title",""), a.get("description",""), a.get("source","Unknown"), a.get("url",""),
-                 a.get("published_at",""), a.get("clean_text",""), s.get("label","Neutral"),
-                 s.get("compound",0.0), json.dumps(a.get("impacts",[])), pipeline_run_id))
+                "INSERT INTO articles (title,description,source,url,published_at,clean_text,"
+                "sentiment_label,sentiment_score,impacts_json,fake_news_label,fake_news_score,"
+                "embedding_json,pipeline_run_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (a.get("title", ""), a.get("description", ""), a.get("source", "Unknown"),
+                 a.get("url", ""), a.get("published_at", ""), a.get("clean_text", ""),
+                 s.get("label", "Neutral"), float(s.get("compound", 0.0)),
+                 json.dumps(a.get("impacts", [])),
+                 fn.get("label", "Real"), float(fn.get("score", 1.0)),
+                 emb_json, pipeline_run_id))
             ids.append(cur.lastrowid)
         conn.commit()
         logger.info("Saved %d articles.", len(ids))
     finally:
         conn.close()
-    return ids  # type: ignore
+    return ids
 
 
-def save_events(events: list[dict], article_db_ids: list[int], articles: list[dict], pipeline_run_id: str = ""):
+def save_events(events: list, article_db_ids: list, articles: list, pipeline_run_id: str = ""):
     conn = get_connection()
     try:
         for event in events:
@@ -114,17 +129,25 @@ def save_events(events: list[dict], article_db_ids: list[int], articles: list[di
             avg = sum(compounds) / len(compounds) if compounds else 0.0
             label = "Positive" if avg >= 0.05 else "Negative" if avg <= -0.05 else "Neutral"
             conn.execute(
-                "INSERT INTO events (event_id,label,size,is_cluster,sentiment_label,sentiment_score,importance_score,risk_score,impact_json,article_ids_json,pipeline_run_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                (event["event_id"], event["label"], event["size"], int(event.get("is_cluster", False)),
-                 label, round(avg, 4), event.get("importance_score", 0.0), event.get("risk_score", 0.0),  # type: ignore
-                 json.dumps(event.get("impact_json", [])), json.dumps(db_ids), pipeline_run_id))
+                "INSERT INTO events (event_id,label,size,is_cluster,lifecycle,weight_score,"
+                "sentiment_label,sentiment_score,importance_score,risk_score,impact_json,"
+                "article_ids_json,pipeline_run_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (event["event_id"], event["label"], event["size"],
+                 int(event.get("is_cluster", False)),
+                 event.get("lifecycle", "emerging"),
+                 float(event.get("weight_score", 0.0)),
+                 label, round(avg, 4),
+                 float(event.get("importance_score", 0.0)),
+                 float(event.get("risk_score", 0.0)),
+                 json.dumps(event.get("impact_json", [])),
+                 json.dumps(db_ids), pipeline_run_id))
         conn.commit()
         logger.info("Saved %d events.", len(events))
     finally:
         conn.close()
 
 
-def save_impacts(articles: list[dict], article_db_ids: list[int], pipeline_run_id: str = ""):
+def save_impacts(articles: list, article_db_ids: list, pipeline_run_id: str = ""):
     conn = get_connection()
     count = 0
     try:
@@ -132,10 +155,12 @@ def save_impacts(articles: list[dict], article_db_ids: list[int], pipeline_run_i
             aid = article_db_ids[i] if i < len(article_db_ids) else None
             for imp in article.get("impacts", []):
                 conn.execute(
-                    "INSERT INTO impacts (article_id,sector,direction,strength,confidence,matched_keywords,pipeline_run_id) VALUES (?,?,?,?,?,?,?)",
-                    (aid, imp["sector"], imp["direction"], imp.get("strength","Neutral"),
-                     imp.get("confidence",0.0), ", ".join(imp.get("matched_keywords",[])), pipeline_run_id))
-                count += 1  # type: ignore
+                    "INSERT INTO impacts (article_id,sector,direction,strength,confidence,"
+                    "matched_keywords,pipeline_run_id) VALUES (?,?,?,?,?,?,?)",
+                    (aid, imp.get("sector", ""), imp.get("direction", ""),
+                     imp.get("strength", "Neutral"), float(imp.get("confidence", 0.0)),
+                     ", ".join(imp.get("matched_keywords", [])), pipeline_run_id))
+                count += 1
         conn.commit()
         logger.info("Saved %d impacts.", count)
     finally:
@@ -145,17 +170,21 @@ def save_impacts(articles: list[dict], article_db_ids: list[int], pipeline_run_i
 def start_pipeline_run(run_id: str):
     conn = get_connection()
     try:
-        conn.execute("INSERT INTO pipeline_runs (id,started_at) VALUES (?,?)", (run_id, datetime.utcnow().isoformat()))
+        conn.execute("INSERT INTO pipeline_runs (id,started_at) VALUES (?,?)",
+                     (run_id, datetime.utcnow().isoformat()))
         conn.commit()
     finally:
         conn.close()
 
 
-def finish_pipeline_run(run_id: str, article_count: int, event_count: int, status: str = "success", error: str = ""):
+def finish_pipeline_run(run_id: str, article_count: int, event_count: int,
+                        status: str = "success", error: str = ""):
     conn = get_connection()
     try:
-        conn.execute("UPDATE pipeline_runs SET finished_at=?,status=?,article_count=?,event_count=?,error_message=? WHERE id=?",
-                     (datetime.utcnow().isoformat(), status, article_count, event_count, error, run_id))
+        conn.execute(
+            "UPDATE pipeline_runs SET finished_at=?,status=?,article_count=?,event_count=?,"
+            "error_message=? WHERE id=?",
+            (datetime.utcnow().isoformat(), status, article_count, event_count, error, run_id))
         conn.commit()
     finally:
         conn.close()
@@ -163,40 +192,101 @@ def finish_pipeline_run(run_id: str, article_count: int, event_count: int, statu
 
 # ── Query Helpers (Dashboard) ────────────────────────────────────────────────
 
-def get_article_count() -> int:  # type: ignore
-    conn = get_connection()
-    try: return conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
-    finally: conn.close()
+def _rows_to_dicts(rows) -> list:
+    return [dict(r) for r in rows]
 
-def get_recent_articles(limit: int = 50) -> list[dict]:  # type: ignore
-    conn = get_connection()
-    try: return [dict(r) for r in conn.execute("SELECT * FROM articles ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()]
-    finally: conn.close()
 
-def get_all_events(limit: int = 100) -> list[dict]:  # type: ignore
-    conn = get_connection()
-    try: return [dict(r) for r in conn.execute("SELECT * FROM events ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()]
-    finally: conn.close()
-
-def get_sentiment_distribution() -> dict:  # type: ignore
-    conn = get_connection()
-    try: return {r["sentiment_label"]: r["cnt"] for r in conn.execute("SELECT sentiment_label, COUNT(*) as cnt FROM articles GROUP BY sentiment_label").fetchall()}
-    finally: conn.close()
-
-def get_sector_impact_summary() -> list[dict]:  # type: ignore
-    conn = get_connection()
-    try: return [dict(r) for r in conn.execute("SELECT sector,direction,strength,COUNT(*) as count,AVG(confidence) as avg_confidence FROM impacts GROUP BY sector,direction ORDER BY count DESC").fetchall()]
-    finally: conn.close()
-
-def get_recent_pipeline_runs(limit: int = 10) -> list[dict]:  # type: ignore
-    conn = get_connection()
-    try: return [dict(r) for r in conn.execute("SELECT * FROM pipeline_runs ORDER BY started_at DESC LIMIT ?", (limit,)).fetchall()]
-    finally: conn.close()
-
-def get_articles_by_ids(article_ids: list[int]) -> list[dict]:  # type: ignore
+def get_article_count() -> int:
     conn = get_connection()
     try:
-        if not article_ids: return []
-        ph = ",".join("?" * len(article_ids))
-        return [dict(r) for r in conn.execute(f"SELECT * FROM articles WHERE id IN ({ph})", article_ids).fetchall()]
-    finally: conn.close()
+        row = conn.execute("SELECT COUNT(*) as c FROM articles").fetchone()
+        return row["c"] if row else 0
+    except Exception as e:
+        logger.error("get_article_count error: %s", e)
+        return 0
+    finally:
+        conn.close()
+
+
+def get_recent_articles(limit: int = 50) -> list:
+    conn = get_connection()
+    try:
+        return _rows_to_dicts(
+            conn.execute("SELECT * FROM articles ORDER BY id DESC LIMIT ?", (limit,)).fetchall())
+    except Exception as e:
+        logger.error("get_recent_articles error: %s", e)
+        return []
+    finally:
+        conn.close()
+
+
+def get_all_events(limit: int = 100) -> list:
+    conn = get_connection()
+    try:
+        return _rows_to_dicts(
+            conn.execute("SELECT * FROM events ORDER BY importance_score DESC LIMIT ?",
+                         (limit,)).fetchall())
+    except Exception as e:
+        logger.error("get_all_events error: %s", e)
+        return []
+    finally:
+        conn.close()
+
+
+def get_sentiment_distribution() -> dict:
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT sentiment_label, count(*) as count FROM articles GROUP BY sentiment_label"
+        ).fetchall()
+        return {r["sentiment_label"]: r["count"] for r in rows}
+    except Exception as e:
+        logger.error("get_sentiment_distribution error: %s", e)
+        return {"Positive": 0, "Negative": 0, "Neutral": 0}
+    finally:
+        conn.close()
+
+
+def get_sector_impact_summary() -> list:
+    conn = get_connection()
+    try:
+        return _rows_to_dicts(conn.execute("""
+            SELECT sector, count(*) as total,
+                   sum(CASE WHEN direction='Positive' THEN 1 ELSE 0 END) as pos,
+                   sum(CASE WHEN direction='Negative' THEN 1 ELSE 0 END) as neg
+            FROM impacts GROUP BY sector ORDER BY total DESC LIMIT 30
+        """).fetchall())
+    except Exception as e:
+        logger.error("get_sector_impact_summary error: %s", e)
+        return []
+    finally:
+        conn.close()
+
+
+def get_recent_pipeline_runs(limit: int = 10) -> list:
+    conn = get_connection()
+    try:
+        return _rows_to_dicts(
+            conn.execute("SELECT * FROM pipeline_runs ORDER BY started_at DESC LIMIT ?",
+                         (limit,)).fetchall())
+    except Exception as e:
+        logger.error("get_recent_pipeline_runs error: %s", e)
+        return []
+    finally:
+        conn.close()
+
+
+def get_articles_by_ids(article_ids: list) -> list:
+    if not article_ids:
+        return []
+    conn = get_connection()
+    try:
+        placeholders = ",".join("?" for _ in article_ids)
+        return _rows_to_dicts(
+            conn.execute(f"SELECT * FROM articles WHERE id IN ({placeholders})",
+                         article_ids).fetchall())
+    except Exception as e:
+        logger.error("get_articles_by_ids error: %s", e)
+        return []
+    finally:
+        conn.close()
