@@ -6,9 +6,15 @@ NER entities, trend forecasts, anomaly alerts, and AI summaries.
 
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException  # type: ignore
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect  # type: ignore
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
+from fastapi.staticfiles import StaticFiles  # type: ignore
+from fastapi.responses import FileResponse  # type: ignore
+import os
 import json
+import asyncio
+import threading
+import mimetypes
 
 from backend import database  # type: ignore
 import backend.config as config  # type: ignore
@@ -19,8 +25,10 @@ from backend import summarizer  # type: ignore
 from backend import pipeline  # type: ignore
 from backend import sector_router  # type: ignore
 from backend import model_router  # type: ignore
-import threading
+import logging
 from pydantic import BaseModel  # type: ignore
+
+logger = logging.getLogger("veiloracle.api")
 
 app = FastAPI(title="VEILORACLE API", description="AI-Powered Real-Time News Intelligence Engine")
 
@@ -58,8 +66,24 @@ def startup_event():
     thread = threading.Thread(target=pipeline.run_pipeline, kwargs={"one_shot": False}, daemon=True)
     thread.start()
 
+# ── WebSocket for live updates ─────────────────────────────────────────────────
+@app.websocket("/ws")
+async def ws_live_updates(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            # send simple heartbeat or system status
+            status = {
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "article_count": database.get_article_count(),
+            }
+            await websocket.send_json(status)
+            await asyncio.sleep(5)
+    except WebSocketDisconnect:
+        logger.info("WebSocket client disconnected")
+    except Exception as e:
+        logger.error("WebSocket error: %s", e)
 
-# -- Core Endpoints -----------------------------------------------------------
 
 @app.get("/api/metrics")
 def get_metrics():
@@ -152,44 +176,59 @@ def get_articles(limit=100):
     return result
 
 
+@app.get("/api/articles/sector/{sector}")
+def get_articles_by_sector(sector: str, limit: int = 50):
+    articles = database.get_articles_by_sector(sector, limit)
+    result = []
+    i = 0
+    while i < len(articles):
+        a = articles[i]
+        score = float(a.get("sentiment_score", 0))
+        result.append({
+            "id": a["id"],
+            "title": a["title"],
+            "source": a["source"],
+            "sentiment_label": a["sentiment_label"],
+            "sentiment_score": _round_dp(score, 3),
+            "published_at": a["published_at"],
+            "fake_news_label": a.get("fake_news_label", "Real"),
+            "fake_news_score": a.get("fake_news_score", 1.0),
+            "url": a.get("url", "")
+        })
+        i = i + 1
+    return result
+
+
 @app.get("/api/impacts")
 def get_impact_summary():
-    si = database.get_sector_impact_summary()
-    sa = {}
-    if si:
-        idx = 0
-        while idx < len(si):
-            imp = si[idx]
-            s = imp["sector"]
-            if s not in sa:
-                sa[s] = {"bullish": 0, "bearish": 0, "total": 0}
-            entry = sa[s]
-            direction_str = str(imp["direction"])
-            if "Bullish" in direction_str:
-                entry["bullish"] = entry["bullish"] + imp["count"]
-            elif "Bearish" in direction_str:
-                entry["bearish"] = entry["bearish"] + imp["count"]
-            entry["total"] = entry["total"] + imp["count"]
-            idx = idx + 1
-
-    res = []
-    sorted_sectors = sorted(sa.keys(), key=lambda x: -int(sa[x]["total"]))
-    for s in sorted_sectors:
-        d = sa[s]
-        if d["bullish"] > d["bearish"]:
-            direction = "Bullish"
-        elif d["bearish"] > d["bullish"]:
-            direction = "Bearish"
-        else:
-            direction = "Mixed"
-        res.append({
-            "sector": s,
-            "bullish": d["bullish"],
-            "bearish": d["bearish"],
-            "total": d["total"],
-            "direction": direction
-        })
-    return res
+    """Get aggregated impact metrics per sector."""
+    try:
+        si = database.get_sector_impact_summary()
+        res = []
+        for imp in si:
+            sector = imp.get("sector", "General")
+            pos = int(imp.get("pos", 0))
+            neg = int(imp.get("neg", 0))
+            total = int(imp.get("total", 0))
+            
+            if pos > neg:
+                direction = "Bullish"
+            elif neg > pos:
+                direction = "Bearish"
+            else:
+                direction = "Mixed"
+                
+            res.append({
+                "sector": sector,
+                "bullish": pos,
+                "bearish": neg,
+                "total": total,
+                "direction": direction
+            })
+        return res
+    except Exception as e:
+        logger.error("Error in get_impact_summary: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/pipeline_runs")
@@ -502,3 +541,38 @@ def analyze_text(req: AnalyzeRequest):
         "sector_keywords": sector_info["matched_keywords"],
         "analysis": analysis
     }
+
+
+# -- Static Files & SPA Support -----------------------------------------------
+
+# Define paths
+FRONTEND_DIST = os.path.join(config.BASE_DIR, "frontend", "dist")
+ASSETS_DIR = os.path.join(FRONTEND_DIST, "assets")
+
+# Mount assets FIRST so they take precedence over the catch-all route
+if os.path.exists(ASSETS_DIR):
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+
+@app.on_event("startup")
+def init_mimetypes():
+    mimetypes.add_type('application/javascript', '.js')
+    mimetypes.add_type('text/css', '.css')
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    # 1. Skip if it's an API or WS call
+    if "api/" in full_path or full_path.startswith("ws"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    
+    # 2. Try to serve specific file from dist
+    file_path = os.path.join(FRONTEND_DIST, full_path)
+    if os.path.isfile(file_path):
+        mime_type, _ = mimetypes.guess_type(file_path)
+        return FileResponse(file_path, media_type=mime_type)
+    
+    # 3. Fallback to index.html for SPA
+    index_path = os.path.join(FRONTEND_DIST, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path, media_type="text/html")
+    
+    return {"detail": "Frontend not built."}

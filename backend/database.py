@@ -268,6 +268,25 @@ def get_sector_impact_summary() -> list:
     return []
 
 
+def get_articles_by_sector(sector: str, limit: int = 50) -> list:
+    conn = get_connection()
+    try:
+        # Join articles with impacts to find articles contributing to this sector
+        query = """
+            SELECT DISTINCT a.* FROM articles a
+            JOIN impacts i ON a.id = i.article_id
+            WHERE i.sector = ?
+            ORDER BY a.published_at DESC LIMIT ?
+        """
+        return _rows_to_dicts(conn.execute(query, (sector, limit)).fetchall())
+    except Exception as e:
+        logger.error("get_articles_by_sector error: %s", e)
+        return []
+    finally:
+        conn.close()
+    return []
+
+
 def get_recent_pipeline_runs(limit: int = 10) -> list:
     conn = get_connection()
     try:

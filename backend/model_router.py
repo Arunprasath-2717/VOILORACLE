@@ -68,7 +68,7 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
     },
     "health": {
         "model_id": "microsoft/BioGPT-Large",
-        "model_type": "local_pipeline",
+        "model_type": "hf_api",
         "pipeline_task": "text-generation",
         "description": "Interpret scientific/medical news, summarize clinical research, detect public health risk",
         "tasks": [
@@ -133,10 +133,6 @@ def _cache_analysis_result(text: str, sector: str, result: Dict[str, Any]) -> No
     
     cache_key = _get_cache_key(text, sector)
     _analysis_cache[cache_key] = result
-    while i < max_len:
-        result.append(text[i])
-        i = i + 1
-    return "".join(result)
 
 
 def _first_n_list(items: List[Any], n: int) -> List[Any]:

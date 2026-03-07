@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import './App.css';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = '/api';
 
 // ── Error Boundary ────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -91,7 +91,9 @@ function App() {
     const [articlesList, setArticlesList] = useState([]);
     const [globalSearch, setGlobalSearch] = useState('');
     const [sectorSearch, setSectorSearch] = useState('');
-    const [systemStatus, setSystemStatus] = useState({ last_update: null, status: 'initializing' });
+    const [sectorNews, setSectorNews] = useState([]);
+    const [isSearchingSector, setIsSearchingSector] = useState(false);
+    const [systemStatus, setSystemStatus] = useState({ last_update: null, status: 'initializing', article_count: 0 });
     const prevArticleCount = useRef(0);
 
     // ── Data Fetching ─────────────────────────────────────────
@@ -146,16 +148,61 @@ function App() {
         }
     };
 
+    const fetchSectorNews = async (sector) => {
+        if (!sector) {
+            setSectorNews([]);
+            return;
+        }
+        setIsSearchingSector(true);
+        try {
+            const res = await fetch(`${API_BASE}/articles/sector/${encodeURIComponent(sector)}`);
+            const data = await res.json();
+            setSectorNews(data);
+        } catch (err) {
+            console.error("Error fetching sector news:", err);
+        } finally {
+            setIsSearchingSector(false);
+        }
+    };
+
+    const handleSectorSearch = (e) => {
+        const val = e.target.value;
+        setSectorSearch(val);
+        if (val.length > 2) {
+            fetchSectorNews(val);
+        } else {
+            setSectorNews([]);
+        }
+    };
+
     useEffect(() => {
         fetchData();
         const interval = setInterval(fetchData, 45000);
         return () => clearInterval(interval);
     }, []);
 
+    // ── Real-time socket connection ───────────────────────────
+    useEffect(() => {
+        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsUrl = `${protocol}://${window.location.host}/ws`;
+        const ws = new WebSocket(wsUrl);
+        ws.onopen = () => console.log("WS connected");
+        ws.onmessage = (evt) => {
+            try {
+                const data = JSON.parse(evt.data);
+                setSystemStatus(prev => ({ ...prev, ...data }));
+            } catch (e) {
+                console.warn("WS parse error", e);
+            }
+        };
+        ws.onclose = () => console.log("WS closed");
+        return () => ws.close();
+    }, []);
+
     // ── Pre-calculations ──────────────────────────────────────
     const isLive = metrics?.article_count > 0;
     const filteredImpacts = (impacts || []).filter(imp =>
-        (imp.sector || '').toLowerCase().includes(globalSearch.toLowerCase())
+        (imp.sector || '').toLowerCase().includes(sectorSearch.toLowerCase() || globalSearch.toLowerCase())
     );
     const filteredEvents = (events || []).filter(ev =>
         (ev.label || '').toLowerCase().includes(globalSearch.toLowerCase()) ||
@@ -234,11 +281,11 @@ function App() {
                             <div className="oracle-subtitle">Enhanced Global Intelligence Network</div>
                         </div>
                         <div className="header-actions">
-                            <div className="search-box glass-panel">
-                                <Search size={14} color="var(--text-muted)" />
+                            <div className="search-box">
+                                <Search className="search-icon" size={16} color="var(--text-muted)" />
                                 <input
                                     type="text"
-                                    placeholder="Search the machine intelligence..."
+                                    placeholder="Search systems intelligence..."
                                     value={globalSearch}
                                     onChange={(e) => setGlobalSearch(e.target.value)}
                                 />
@@ -586,25 +633,29 @@ function App() {
                             TAB: SECTORS (Full Sector View)
                            ═══════════════════════════════════════════════ */}
                             {activeTab === 'sectors' && (
-                                <div className="main-content single-column">
+                                <div className="main-content">
                                     <div className="section glass-panel">
                                         <div className="section-title">
                                             <Activity size={18} color="var(--accent-purple)" />
-                                            Complete Sector Intelligence
-                                            <span className="section-title-count">({impacts.length.toLocaleString()} sectors analyzed by AI)</span>
+                                            Deep Intelligence Matrix
+                                            <span className="section-title-count">({impacts.length.toLocaleString()} sectors analyzed)</span>
                                         </div>
-                                        <input
-                                            type="text" placeholder="Search across all AI-analyzed sectors..."
-                                            className="search-input" value={sectorSearch}
-                                            onChange={(e) => setSectorSearch(e.target.value)}
-                                        />
-                                        <div className="impact-grid virtualized-scroll">
+                                        <div className="search-box glass-panel" style={{ width: '100%', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.03)' }}>
+                                            <Search className="search-icon" size={16} color="var(--text-muted)" />
+                                            <input
+                                                type="text" placeholder="Search across all AI-analyzed sectors..."
+                                                style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', width: '100%', padding: '8px 0' }}
+                                                value={sectorSearch}
+                                                onChange={handleSectorSearch}
+                                            />
+                                        </div>
+                                        <div className="impact-grid virtualized-scroll" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                                             {filteredImpacts.slice(0, 150).map((imp, i) => {
                                                 let arr = "→", cl = "impact-mixed";
                                                 if (imp.direction === "Bullish") { arr = "↑"; cl = "impact-bullish"; }
                                                 else if (imp.direction === "Bearish") { arr = "↓"; cl = "impact-bearish"; }
                                                 return (
-                                                    <div key={i} className="impact-cell mini-cell glass-card">
+                                                    <div key={i} className="impact-cell mini-cell glass-card" onClick={() => { setSectorSearch(imp.sector); fetchSectorNews(imp.sector); }} style={{ cursor: 'pointer' }}>
                                                         <div className="impact-sector" title={imp.sector}>{imp.sector}</div>
                                                         <div className={`impact-direction ${cl}`}>{arr}</div>
                                                         <div className="impact-stats">
@@ -613,9 +664,37 @@ function App() {
                                                     </div>
                                                 );
                                             })}
-                                            {filteredImpacts.length > 150 && (
-                                                <div className="mini-cell glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>+{(filteredImpacts.length - 150).toLocaleString()} more nodes</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="section glass-panel">
+                                        <div className="section-title">
+                                            <Sparkles size={18} color="var(--accent-cyan)" />
+                                            Linked Sector Intel (Past News)
+                                            {sectorSearch && <span className="section-title-count" style={{ color: 'var(--accent-purple)' }}> - {sectorSearch}</span>}
+                                        </div>
+                                        <div className="events-list">
+                                            {isSearchingSector ? (
+                                                <div className="empty-state">
+                                                    <div className="loading-spinner" style={{ width: 30, height: 30 }}></div>
+                                                    <div className="empty-state-text">Retrieving past intelligence vectors...</div>
+                                                </div>
+                                            ) : sectorNews.length > 0 ? sectorNews.map((art, i) => (
+                                                <a key={art.id || i} className="article-feed-card glass-card" href={art.url || '#'} target="_blank" rel="noopener noreferrer">
+                                                    <div className="article-feed-main">
+                                                        <div className="article-feed-title" style={{ fontSize: '0.82rem' }}>{art.title}</div>
+                                                        <div className="article-feed-meta">
+                                                            <span className="article-source-badge">{art.source}</span>
+                                                            <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>{art.sentiment_label}</span>
+                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{art.published_at ? new Date(art.published_at).toLocaleDateString() : ''}</span>
+                                                        </div>
+                                                    </div>
+                                                    <ExternalLink size={14} color="var(--accent-purple)" />
+                                                </a>
+                                            )) : (
+                                                <div className="empty-state">
+                                                    <div className="empty-state-icon">📚</div>
+                                                    <div className="empty-state-text">Select a sector to view contributing news articles.</div>
                                                 </div>
                                             )}
                                         </div>

@@ -26,10 +26,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localho
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # ── API Keys & Credentials ─────────────────────────────────────────────────────────────────
-NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "")
-NEWSDATA_API_KEY = os.getenv("NEWSDATA_API_KEY", "pub_31f036a4c7674f828afcb683142d491b")
+NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "797934e03b33474cb8685d392f0b5335")
+NEWSDATA_API_KEY = os.getenv("NEWSDATA_API_KEY", "pub_c97f479240b7412e9ec56bf9acc953b5")
+GNEWS_API_KEY = os.getenv("GNEWS_API_KEY", "ad0fdcffbdce1cacf14b18dd44260112")
+WORLDNEWS_API_KEY = os.getenv("WORLDNEWS_API_KEY", "a0079caa91044730bcb54dcbbcf6dea5")
+THENEWS_API_KEY = os.getenv("THENEWS_API_KEY", "fkr5gjUCqIEUPVP3fU06Lcf2CU0bxK1hEvoIGBQi")
+WEBZ_API_KEY = os.getenv("WEBZ_API_KEY", "4a6b0b05-34cf-475e-8a77-2de06c3f4750")
 GDELT_API_URL = "https://api.gdeltproject.org/api/v2/doc/doc?query=news&mode=ArtList&maxrecords=100&format=json"
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyB7h-2DI8kTO5csXCXkv30auwqRxesKm8I")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyB3iLyylOu0tLrWbGJqYyeGMcsHtiVCNTk")
 
 # ── Hugging Face API Token (for large model inference) ────────────────────────
 HF_API_TOKEN = os.getenv("HF_API_TOKEN", "")
@@ -55,38 +59,23 @@ NEWS_CATEGORIES = ["general", "technology", "business", "science", "health", "sp
 NEWS_COUNTRY = "us"
 
 # ── RSS Feed URLs (free, unlimited, global multi-domain) ─────────────────────
+# Note: optimized for reliability and speed (removed slow feeds)
 RSS_FEEDS = [
-    # Global Headlines
+    # Global Headlines (most reliable)
     "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en",
-    "https://news.google.com/rss/search?q=breaking+news",
     "https://feeds.bbci.co.uk/news/rss.xml",
-    "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
-    # India — The Hindu, Times of India, NDTV, India Today
-    "https://www.thehindu.com/news/national/feeder/default.rss",
-    "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
-    "https://feeds.feedburner.com/ndtvnews-top-stories",
-    "https://www.indiatoday.in/rss/home",
     # Science & Technology
     "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
-    "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
     # Sports
     "https://feeds.bbci.co.uk/sport/rss.xml",
-    "https://rss.nytimes.com/services/xml/rss/nyt/Sports.xml",
     # Business & Economy
     "https://feeds.bbci.co.uk/news/business/rss.xml",
-    "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
     # Health
-    "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml",
     "https://feeds.bbci.co.uk/news/health/rss.xml",
     # Entertainment & Arts
     "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
     # World News
     "https://feeds.bbci.co.uk/news/world/rss.xml",
-    "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-    # Middle East & International
-    "https://www.aljazeera.com/xml/rss/all.xml",
-    # Reuters
-    "https://news.google.com/rss/search?q=site:reuters.com&hl=en&gl=US&ceid=US:en",
 ]
 
 # ── Artificial Intelligence Models \u0026 Clustering ─────────────────────────────
