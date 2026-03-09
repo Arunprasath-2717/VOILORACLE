@@ -4,6 +4,29 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, Sparkles, Globe, Shield, Zap, TrendingUp, LayoutDashboard } from 'lucide-react';
 import './LandingPage.css';
 
+// ── Error Boundary for Spline ───────────────────────────
+class SplineErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() { return { hasError: true }; }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="spline-fallback">
+                    <div className="neural-cube-static">
+                        <div className="layer l1"></div>
+                        <div className="layer l2"></div>
+                        <div className="layer l3"></div>
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 const LandingPage = () => {
     return (
         <div className="landing-container">
@@ -52,7 +75,7 @@ const LandingPage = () => {
 
                     <div className="hero-stats animate-fadeIn" style={{ animationDelay: '0.4s' }}>
                         <div className="hero-stat-item">
-                            <span className="stat-val">3K+</span>
+                            <span className="stat-val">3,000+</span>
                             <span className="stat-lbl">Sectors Analyzed</span>
                         </div>
                         <div className="hero-stat-item">
@@ -61,17 +84,19 @@ const LandingPage = () => {
                         </div>
                         <div className="hero-stat-item">
                             <span className="stat-val">0.4s</span>
-                            <span className="stat-lbl">Response Latency</span>
+                            <span className="stat-lbl">Latency</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="hero-visual animate-slideInRight">
-                    <Suspense fallback={<div className="spline-loading">Initializing 10D Neural Matrix...</div>}>
-                        <div className="spline-wrapper">
-                            <Spline scene="https://prod.spline.design/6Wq1Q7Ybe9hZ6vYd/scene.splinecode" />
-                        </div>
-                    </Suspense>
+                    <SplineErrorBoundary>
+                        <Suspense fallback={<div className="spline-loading">Initializing Neural Matrix...</div>}>
+                            <div className="spline-wrapper">
+                                <Spline scene="https://prod.spline.design/6Wq1Q7Ybe9hZ6vYd/scene.splinecode" />
+                            </div>
+                        </Suspense>
+                    </SplineErrorBoundary>
                     <div className="visual-overlay"></div>
                 </div>
             </section>

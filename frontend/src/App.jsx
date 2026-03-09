@@ -127,7 +127,7 @@ const Dashboard = () => {
                             background: '#0c0c1a',
                             color: '#7c6cf0',
                             border: '1px solid rgba(124, 108, 240, 0.3)',
-                            fontSize: '0.8rem',
+                            fontSize: '0.9rem',
                             fontWeight: '600'
                         }
                     });
@@ -269,7 +269,7 @@ const Dashboard = () => {
                 <div className="app-container loading-container overlay-ui">
                     <div className="loading-spinner"></div>
                     <div className="loading-text">Initializing Neural Intelligence Matrix...</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+                    <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', marginTop: '1rem', fontWeight: '500' }}>
                         Fetching real-time telemetry from global nodes...
                     </div>
                 </div>
@@ -566,11 +566,11 @@ const Dashboard = () => {
                                                     .map((art, i) => (
                                                         <a key={`pick-${i}`} href={art.url || '#'} target="_blank" rel="noopener noreferrer" className="top-pick-card glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '15px', textDecoration: 'none' }}>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <span className="badge" style={{ background: 'rgba(124,108,240,0.15)', color: 'var(--accent-purple)', border: '1px solid rgba(124,108,240,0.3)' }}>{['🔥 Hot Pick', '💡 Deep Insight', '📈 High Impact'][i]}</span>
+                                                                <span className="badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-purple)', border: '1px solid rgba(99, 102, 241, 0.2)', padding: '4px 10px' }}>{['🔥 Hot Pick', '💡 Deep Insight', '📈 High Impact'][i]}</span>
                                                                 <ExternalLink size={14} color="var(--accent-purple)" />
                                                             </div>
-                                                            <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'var(--text-light)', lineHeight: '1.4' }}>{art.title}</div>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                            <div style={{ fontSize: 'var(--font-base)', fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.5' }}>{art.title}</div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: '600' }}>
                                                                 <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>{art.sentiment_label}</span>
                                                                 <span className="article-source-badge">{art.source}</span>
                                                             </div>
@@ -605,14 +605,14 @@ const Dashboard = () => {
                                                             <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>
                                                                 {art.sentiment_label}
                                                             </span>
-                                                            <span className={`badge ${art.fake_news_label === 'Fake' ? 'badge-negative' : 'badge-neutral'}`} style={{ border: art.fake_news_label === 'Fake' ? '1px solid #ff5252' : '1px solid var(--accent-cyan)' }}>
+                                                            <span className={`badge ${art.fake_news_label === 'Fake' ? 'badge-negative' : 'badge-neutral'}`} style={{ border: art.fake_news_label === 'Fake' ? '1px solid var(--negative)' : '1px solid var(--accent-cyan)' }}>
                                                                 {art.fake_news_label === 'Fake' ? '🚨 Disinformation Flags' : 'Verified Real'} ({(art.fake_news_score * 100).toFixed(0)}%)
                                                             </span>
-                                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontFamily: "'JetBrains Mono', monospace" }}>
+                                                            <span style={{ color: 'var(--text-muted)', fontSize: 'var(--font-xs)', fontWeight: '700', fontFamily: "'JetBrains Mono', monospace" }}>
                                                                 Score: {(art.sentiment_score || 0).toFixed(2)}
                                                             </span>
                                                             {art.published_at && (
-                                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
+                                                                <span style={{ color: 'var(--text-muted)', fontSize: 'var(--font-xs)', fontWeight: '600' }}>
                                                                     {new Date(art.published_at).toLocaleDateString()}
                                                                 </span>
                                                             )}
@@ -646,7 +646,7 @@ const Dashboard = () => {
                                             <Search className="search-icon" size={16} color="var(--text-muted)" />
                                             <input
                                                 type="text" placeholder="Search across all AI-analyzed sectors..."
-                                                style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', width: '100%', padding: '8px 0' }}
+                                                style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontWeight: '500', width: '100%', padding: '10px 0', fontSize: 'var(--font-sm)' }}
                                                 value={sectorSearch}
                                                 onChange={handleSectorSearch}
                                             />
@@ -684,11 +684,11 @@ const Dashboard = () => {
                                             ) : sectorNews.length > 0 ? sectorNews.map((art, i) => (
                                                 <a key={art.id || i} className="article-feed-card glass-card" href={art.url || '#'} target="_blank" rel="noopener noreferrer">
                                                     <div className="article-feed-main">
-                                                        <div className="article-feed-title" style={{ fontSize: '0.82rem' }}>{art.title}</div>
+                                                        <div className="article-feed-title" style={{ fontSize: 'var(--font-sm)', fontWeight: '600' }}>{art.title}</div>
                                                         <div className="article-feed-meta">
                                                             <span className="article-source-badge">{art.source}</span>
                                                             <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>{art.sentiment_label}</span>
-                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{art.published_at ? new Date(art.published_at).toLocaleDateString() : ''}</span>
+                                                            <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: '600' }}>{art.published_at ? new Date(art.published_at).toLocaleDateString() : ''}</span>
                                                         </div>
                                                     </div>
                                                     <ExternalLink size={14} color="var(--accent-purple)" />
