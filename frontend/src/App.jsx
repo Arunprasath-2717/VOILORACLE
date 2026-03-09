@@ -13,6 +13,8 @@ import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
     Tooltip, BarChart as ReBarChart, Bar, Cell, PieChart as RePieChart, Pie
 } from 'recharts';
+import { Routes, Route, Link as RouterLink } from 'react-router-dom';
+import LandingPage from './LandingPage';
 import './App.css';
 
 const API_BASE = '/api';
@@ -71,9 +73,9 @@ function InnerRing() {
 
 
 // ═══════════════════════════════════════════════════════════════
-// MAIN APP COMPONENT
+// DASHBOARD COMPONENT (Extracted from old App)
 // ═══════════════════════════════════════════════════════════════
-function App() {
+const Dashboard = () => {
     // ── State ─────────────────────────────────────────────────
     const [metrics, setMetrics] = useState({
         article_count: 0, event_count: 0,
@@ -921,6 +923,18 @@ function App() {
                 </div>
             )}
         </>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN APP ROUTER
+// ═══════════════════════════════════════════════════════════════
+function App() {
+    return (
+        <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
     );
 }
 
