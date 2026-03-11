@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    ChevronRight, ArrowUpRight, Menu, X, Droplets, Wind,
-    Snowflake, Sun, Zap, BarChart3, MapPin, Cloud
+    ChevronRight, ArrowUpRight, Menu, X, Droplets,
+    Snowflake, Zap, BarChart3, Cloud
 } from 'lucide-react';
 import './LandingPage.css';
 
