@@ -13,14 +13,16 @@
     "@react-three/fiber": "^8.15.12",
     "@splinetool/react-spline": "^4.1.0",
     "@splinetool/runtime": "^1.12.67",
+    "globe.gl": "^2.45.0",
     "lucide-react": "^0.344.0",
     "maath": "^0.10.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-globe.gl": "^2.27.2",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.13.1",
     "recharts": "^3.7.0",
-    "three": "^0.160.0"
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.64",
