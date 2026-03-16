@@ -231,7 +231,9 @@ ACTIONS = [
     "Surges", "Plummets", "Hits Record", "Announces", "Expands",
     "Faces Scrutiny Over", "Unveils", "Acquires", "Merges With",
     "Discovers", "Releases", "Halts", "Invests in", "Predicts",
-    "Launches", "Suspends", "Investigates", "Celebrates", "Wins", "Signs"
+    "Launches", "Suspends", "Investigates", "Celebrates", "Wins", "Signs",
+    "Secures Victory Against", "Breaks World Record In", "Suffers Defeat In",
+    "Announces New Manager For"
 ]
 SUBJECTS = [
     "AI Models", "Global Markets", "Oil Prices", "Crypto Assets",
@@ -241,7 +243,9 @@ SUBJECTS = [
     "Olympic Committee", "Film Industry", "Climate Scientists",
     "Military Operations", "Education Reform", "Fashion Week",
     "Agricultural Output", "Mining Operations", "Streaming Platforms",
-    "World Cup Organizers", "University Rankings", "Wildlife Conservation"
+    "World Cup Organizers", "University Rankings", "Wildlife Conservation",
+    "Premier League Clubs", "Formula 1 Teams", "Tennis Grand Slams",
+    "NBA Franchises", "NFL Super Bowl", "Champions League"
 ]
 
 

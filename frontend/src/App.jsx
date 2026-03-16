@@ -1,79 +1,40 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Activity, BarChart2, Globe, Layers, ThumbsUp, ThumbsDown, Minus,
-    Link, FileText, ChevronDown, ChevronUp, TrendingUp, TrendingDown,
+    Link as LinkIcon, FileText, ChevronDown, ChevronUp, TrendingUp, TrendingDown,
     AlertTriangle, Zap, Brain, Users, Building, MapPin, DollarSign,
-    Search, Eye, Shield, Cpu, Sparkles, ExternalLink, Newspaper, PieChart as PieChartIcon
+    Search, Eye, Shield, Cpu, Sparkles, ExternalLink, Newspaper, PieChart as PieChartIcon,
+    RefreshCw, Clock, ArrowUpRight, Filter, Star, X
 } from 'lucide-react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Points, PointMaterial } from '@react-three/drei';
-import * as random from 'maath/random/dist/maath-random.esm';
 import { Toaster, toast } from 'react-hot-toast';
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
     Tooltip, BarChart as ReBarChart, Bar, Cell, PieChart as RePieChart, Pie
 } from 'recharts';
 import { Routes, Route, Link as RouterLink } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import LandingPage from './LandingPage';
+import { supabase } from './supabaseClient';
 import './App.css';
 
 const API_BASE = '/api';
 
 // ── Error Boundary ────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { hasError: false };
-    }
+    constructor(props) { super(props); this.state = { hasError: false }; }
     static getDerivedStateFromError() { return { hasError: true }; }
     render() {
-        if (this.state.hasError) return <div className="app-container loading-container overlay-ui"><div className="loading-text">Intelligence Interface Degraded. Please reload.</div></div>;
+        if (this.state.hasError) return (
+            <div className="app-container loading-container overlay-ui">
+                <div className="loading-text">Intelligence Interface Degraded. Please reload.</div>
+            </div>
+        );
         return this.props.children;
     }
 }
-function ParticleSphere({ count, color = '#7c6cf0' }) {
-    const ref = useRef();
-    const pointsCount = Math.min(count || 5000, 15000);
-    const sphere = useMemo(() => random.inSphere(new Float32Array(pointsCount * 3), { radius: 1.5 }), [pointsCount]);
-
-    useFrame((state, delta) => {
-        if (ref.current) {
-            ref.current.rotation.x -= delta / 15;
-            ref.current.rotation.y -= delta / 20;
-            const scale = 1 + Math.sin(state.clock.elapsedTime) * 0.05;
-            ref.current.scale.set(scale, scale, scale);
-        }
-    });
-
-    return (
-        <group rotation={[0, 0, Math.PI / 4]}>
-            <Points ref={ref} positions={sphere} stride={3} frustumCulled={false}>
-                <PointMaterial transparent color={color} size={0.012} sizeAttenuation={true} depthWrite={false} opacity={0.6} />
-            </Points>
-        </group>
-    );
-}
-
-function InnerRing() {
-    const ref = useRef();
-    const ring = useMemo(() => random.inSphere(new Float32Array(2000 * 3), { radius: 0.6 }), []);
-
-    useFrame((state, delta) => {
-        if (ref.current) {
-            ref.current.rotation.z += delta / 8;
-        }
-    });
-
-    return (
-        <Points ref={ref} positions={ring} stride={3} frustumCulled={false}>
-            <PointMaterial transparent color="#00e5d0" size={0.006} sizeAttenuation={true} depthWrite={false} opacity={0.5} />
-        </Points>
-    );
-}
-
 
 // ═══════════════════════════════════════════════════════════════
-// DASHBOARD COMPONENT (Extracted from old App)
+// DASHBOARD COMPONENT (Light Premium SaaS Theme)
 // ═══════════════════════════════════════════════════════════════
 const Dashboard = () => {
     // ── State ─────────────────────────────────────────────────
@@ -96,7 +57,11 @@ const Dashboard = () => {
     const [sectorNews, setSectorNews] = useState([]);
     const [isSearchingSector, setIsSearchingSector] = useState(false);
     const [systemStatus, setSystemStatus] = useState({ last_update: null, status: 'initializing', article_count: 0 });
+    // Supabase search state
+    const [supabaseResults, setSupabaseResults] = useState([]);
+    const [isSearchingSupabase, setIsSearchingSupabase] = useState(false);
     const prevArticleCount = useRef(0);
+    const searchTimeout = useRef(null);
 
     // ── Data Fetching ─────────────────────────────────────────
     const fetchData = async () => {
@@ -113,22 +78,17 @@ const Dashboard = () => {
             ]);
 
             if (statusRes && statusRes.ok) setSystemStatus(await statusRes.json());
-
             if (metricsRes && metricsRes.ok) {
                 const data = await metricsRes.json();
                 setMetrics(data);
-
-                // Show notification if new articles arrive
                 if (prevArticleCount.current > 0 && data.article_count > prevArticleCount.current) {
                     const diff = data.article_count - prevArticleCount.current;
-                    toast.success(`Ingested ${diff} new global intelligence signals`, {
+                    toast.success(`Ingested ${diff} new intelligence signals`, {
                         icon: '📡',
                         style: {
-                            background: '#0c0c1a',
-                            color: '#7c6cf0',
-                            border: '1px solid rgba(124, 108, 240, 0.3)',
-                            fontSize: '0.9rem',
-                            fontWeight: '600'
+                            background: '#ffffff', color: '#0a0f1e',
+                            border: '1px solid rgba(99,102,241,0.2)',
+                            fontSize: '0.85rem', fontWeight: '600'
                         }
                     });
                 }
@@ -140,7 +100,6 @@ const Dashboard = () => {
             if (trendsRes && trendsRes.ok) setTrends(await trendsRes.json());
             if (anomaliesRes && anomaliesRes.ok) setAnomalies(await anomaliesRes.json());
             if (articlesListRes && articlesListRes.ok) setArticlesList(await articlesListRes.json());
-
             setLoading(false);
             setError(null);
         } catch (err) {
@@ -150,11 +109,46 @@ const Dashboard = () => {
         }
     };
 
-    const fetchSectorNews = async (sector) => {
-        if (!sector) {
-            setSectorNews([]);
+    // ── Supabase Search (past fetched news) ────────────────────
+    const searchSupabase = async (query) => {
+        if (!query || query.length < 3) {
+            setSupabaseResults([]);
             return;
         }
+        setIsSearchingSupabase(true);
+        try {
+            const { data, error: sbError } = await supabase
+                .from('articles')
+                .select('*')
+                .or(`title.ilike.%${query}%,description.ilike.%${query}%,source.ilike.%${query}%`)
+                .order('id', { ascending: false })
+                .limit(50);
+            if (sbError) throw sbError;
+            setSupabaseResults(data || []);
+        } catch (err) {
+            console.error('Supabase search error:', err);
+            // Fallback to API search
+            setSupabaseResults([]);
+        } finally {
+            setIsSearchingSupabase(false);
+        }
+    };
+
+    const handleGlobalSearch = (e) => {
+        const val = e.target.value;
+        setGlobalSearch(val);
+        // Debounced Supabase search
+        if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        searchTimeout.current = setTimeout(() => searchSupabase(val), 400);
+    };
+
+    const clearSearch = () => {
+        setGlobalSearch('');
+        setSupabaseResults([]);
+    };
+
+    const fetchSectorNews = async (sector) => {
+        if (!sector) { setSectorNews([]); return; }
         setIsSearchingSector(true);
         try {
             const res = await fetch(`${API_BASE}/articles/sector/${encodeURIComponent(sector)}`);
@@ -170,11 +164,8 @@ const Dashboard = () => {
     const handleSectorSearch = (e) => {
         const val = e.target.value;
         setSectorSearch(val);
-        if (val.length > 2) {
-            fetchSectorNews(val);
-        } else {
-            setSectorNews([]);
-        }
+        if (val.length > 2) fetchSectorNews(val);
+        else setSectorNews([]);
     };
 
     useEffect(() => {
@@ -183,7 +174,6 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // ── Real-time socket connection ───────────────────────────
     useEffect(() => {
         const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
         const wsUrl = `${protocol}://${window.location.host}/ws`;
@@ -193,15 +183,13 @@ const Dashboard = () => {
             try {
                 const data = JSON.parse(evt.data);
                 setSystemStatus(prev => ({ ...prev, ...data }));
-            } catch (e) {
-                console.warn("WS parse error", e);
-            }
+            } catch (e) { console.warn("WS parse error", e); }
         };
         ws.onclose = () => console.log("WS closed");
         return () => ws.close();
     }, []);
 
-    // ── Pre-calculations ──────────────────────────────────────
+    // ── Filter logic ──────────────────────────────────────────
     const isLive = metrics?.article_count > 0;
     const filteredImpacts = (impacts || []).filter(imp =>
         (imp.sector || '').toLowerCase().includes(sectorSearch.toLowerCase() || globalSearch.toLowerCase())
@@ -220,85 +208,79 @@ const Dashboard = () => {
     const totalNeutral = metrics?.sentiment_distribution?.Neutral || 0;
     const isBullish = totalPositive > totalNegative;
     const stabilityScore = metrics?.article_count > 0 ? ((totalPositive / metrics.article_count) * 100).toFixed(1) : '--';
-    const moodColor = isBullish ? '#00e5d0' : '#ff5252';
-    const activePulseSpeed = loading ? 0.8 : 0.4;
+    const moodColor = isBullish ? '#059669' : '#dc2626';
 
-    // ── Tab Definitions ───────────────────────────────────────
     const tabs = [
-        { id: 'overview', label: 'Overview', icon: <Eye size={14} /> },
-        { id: 'events', label: 'Live Events', icon: <Zap size={14} />, badge: filteredEvents.length },
-        { id: 'sectors', label: 'Sector Analysis', icon: <Activity size={14} />, badge: filteredImpacts.length },
-        { id: 'articles', label: 'News Feed', icon: <Newspaper size={14} />, badge: filteredArticles.length },
+        { id: 'overview', label: 'Overview', icon: <Eye size={15} /> },
+        { id: 'events', label: 'Live Events', icon: <Zap size={15} />, badge: filteredEvents.length },
+        { id: 'sectors', label: 'Sector Intel', icon: <Activity size={15} />, badge: filteredImpacts.length },
+        { id: 'articles', label: 'News Feed', icon: <Newspaper size={15} />, badge: filteredArticles.length },
+        { id: 'analytics', label: 'Analytics', icon: <BarChart2 size={15} /> },
     ];
 
-    // ── Mood Color ────────────────────────────────────────────
-    const moodClass = isBullish ? 'mood-bullish' : 'mood-bearish';
-
-    // ── Entity Icon ───────────────────────────────────────────
     const entityIcon = (label) => {
         switch (label) {
-            case 'ORG': return <Building size={12} />;
-            case 'PERSON': return <Users size={12} />;
-            case 'GPE': case 'LOC': return <MapPin size={12} />;
-            case 'MONEY': return <DollarSign size={12} />;
-            default: return <Sparkles size={12} />;
+            case 'ORG': return <Building size={14} />;
+            case 'PERSON': return <Users size={14} />;
+            case 'GPE': case 'LOC': return <MapPin size={14} />;
+            case 'MONEY': return <DollarSign size={14} />;
+            default: return <Sparkles size={14} />;
         }
     };
 
-
+    // Use supabase results when searching, otherwise use API results
+    const displayArticles = globalSearch.length >= 3 && supabaseResults.length > 0
+        ? supabaseResults
+        : filteredArticles;
 
     return (
-        <>
-            {/* ── 3D Background (Constant) ────────────────────────── */}
-            <div className="canvas-container">
-                <ErrorBoundary>
-                    <Canvas camera={{ position: [0, 0, 3] }}>
-                        <ambientLight intensity={0.3} />
-                        <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={1} />
-                        <ParticleSphere count={loading ? 2000 : 5000} color={moodColor} />
-                        {!loading && <InnerRing />}
-                        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={activePulseSpeed} />
-                    </Canvas>
-                </ErrorBoundary>
-                <div className="canvas-overlay"></div>
-            </div>
+        <ErrorBoundary>
+            {/* Soft ambient background complementing the light theme */}
+            <div className="dashboard-bg"></div>
+
             <Toaster position="bottom-right" />
 
-            {/* ── Conditional UI Overlay ──────────────────────────── */}
             {loading ? (
                 <div className="app-container loading-container overlay-ui">
                     <div className="loading-spinner"></div>
-                    <div className="loading-text">Initializing Neural Intelligence Matrix...</div>
-                    <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', marginTop: '1rem', fontWeight: '500' }}>
-                        Fetching real-time telemetry from global nodes...
+                    <div className="loading-text">Initializing VEILORACLE Intelligence...</div>
+                    <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', marginTop: '0.5rem', fontWeight: '500' }}>
+                        Connecting to global intelligence nodes...
                     </div>
                 </div>
             ) : (
                 <div className="app-container overlay-ui">
-
-                    {/* Header */}
+                    {/* ═══ HEADER ═══ */}
                     <header className="header">
-                        <div className="title-container">
-                            <div className="oracle-title">🔮 VOILORACLE</div>
-                            <div className="oracle-subtitle">Enhanced Global Intelligence Network</div>
-                        </div>
+                        <RouterLink to="/" className="title-container" title="Return to Landing Page">
+                            <div className="oracle-title">🔮 VEILORACLE</div>
+                            <div className="oracle-subtitle">AI Global Intelligence Network</div>
+                        </RouterLink>
                         <div className="header-actions">
                             <div className="search-box">
                                 <Search className="search-icon" size={16} color="var(--text-muted)" />
                                 <input
                                     type="text"
-                                    placeholder="Search systems intelligence..."
+                                    placeholder="Search news, sectors, events..."
                                     value={globalSearch}
-                                    onChange={(e) => setGlobalSearch(e.target.value)}
+                                    onChange={handleGlobalSearch}
                                 />
+                                {globalSearch && (
+                                    <button onClick={clearSearch} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                                        <X size={16} color="var(--text-muted)" />
+                                    </button>
+                                )}
+                                {isSearchingSupabase && (
+                                    <RefreshCw size={14} color="var(--accent-indigo)" style={{ animation: 'spin 1s linear infinite' }} />
+                                )}
                             </div>
                             <div className="status-container">
                                 <div className="status-indicator">
                                     <span className={`status-dot ${isLive ? 'status-live' : 'status-offline'}`}></span>
-                                    <span className="status-text">{isLive ? 'SYSTEMS LIVE' : 'OFFLINE'}</span>
+                                    <span className="status-text">{isLive ? 'LIVE' : 'OFFLINE'}</span>
                                 </div>
                                 <div className="update-time">
-                                    Last Update: {systemStatus.last_update ? new Date(systemStatus.last_update).toLocaleTimeString() : '--:--:--'}
+                                    {systemStatus.last_update ? new Date(systemStatus.last_update).toLocaleTimeString() : '--:--:--'}
                                 </div>
                             </div>
                         </div>
@@ -308,15 +290,66 @@ const Dashboard = () => {
                         <div className="error-banner">⚠️ {error}</div>
                     ) : (
                         <>
-                            {/* ── Dashboard Pulse — Global Stability ─── */}
+                            {/* ═══ Supabase Search Results Overlay ═══ */}
+                            {globalSearch.length >= 3 && supabaseResults.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="glass-panel"
+                                    style={{ padding: '24px', marginBottom: '24px' }}
+                                >
+                                    <div className="section-title">
+                                        <div className="section-title-icon"><Search size={16} /></div>
+                                        Search Results from Archive
+                                        <span className="section-title-count">({supabaseResults.length} found globally)</span>
+                                    </div>
+                                    <div className="events-list" style={{ maxHeight: '360px' }}>
+                                        {supabaseResults.map((art, i) => (
+                                            <a
+                                                key={`sb-${art.id || i}`}
+                                                className="article-feed-card glass-card"
+                                                href={art.url || '#'}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => {
+                                                    if (!art.url || !art.url.startsWith('http')) {
+                                                        e.preventDefault();
+                                                    }
+                                                }}
+                                            >
+                                                <div className="article-feed-main">
+                                                    <div className="article-feed-title">
+                                                        <FileText size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: 4 }} />
+                                                        {art.title}
+                                                    </div>
+                                                    <div className="article-feed-meta">
+                                                        <span className="article-source-badge">{art.source}</span>
+                                                        <span className={`badge badge-${(art.sentiment_label || 'neutral').toLowerCase()}`}>
+                                                            {art.sentiment_label}
+                                                        </span>
+                                                        {art.published_at && (
+                                                            <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: '600' }}>
+                                                                {new Date(art.published_at).toLocaleDateString()}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <ExternalLink size={16} color="var(--accent-indigo)" style={{ flexShrink: 0 }} />
+                                            </a>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* ═══ Intelligence Overview ═══ */}
                             <div className="intelligence-overview">
                                 <div className="overview-main glass-panel">
                                     <div className="stability-core">
                                         <div className="stability-meter">
-                                            <svg viewBox="0 0 100 100">
-                                                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                                                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--accent-cyan)" strokeWidth="8"
-                                                    strokeDasharray={`${(stabilityScore === '--' ? 0 : stabilityScore) * 2.8} 283`}
+                                            <svg viewBox="0 0 100 100" width="100%" height="100%">
+                                                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="6" />
+                                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent-indigo)" strokeWidth="6"
+                                                    strokeDasharray={`${(stabilityScore === '--' ? 0 : stabilityScore) * 2.64} 264`}
                                                     strokeLinecap="round" transform="rotate(-90 50 50)" />
                                             </svg>
                                             <div className="stability-value">
@@ -325,46 +358,52 @@ const Dashboard = () => {
                                             </div>
                                         </div>
                                         <div className="stability-info">
-                                            <div className="briefing-tag">GLOBAL INTEERELIGENCE STATUS</div>
+                                            <div className="briefing-tag">GLOBAL INTELLIGENCE STATUS</div>
                                             <div className="briefing-title">Neural Matrix: {isBullish ? 'Bullish' : 'Bearish'}</div>
-                                            <div className="briefing-text">Analyzing global domains, detecting market structures and mapping events across {metrics.article_count} neural impact points.</div>
+                                            <div className="briefing-text">
+                                                Analyzing <strong>{metrics.article_count.toLocaleString()}</strong> signals across global domains.
+                                                Market sentiment is {isBullish ? 'predominantly positive' : 'trending negative'} over the recent interval.
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="overview-stats">
                                     <div className="stat-box glass-panel">
-                                        <div className="stat-icon"><Globe size={18} color="var(--accent-blue)" /></div>
+                                        <div className="stat-box-icon"><Globe size={18} /></div>
                                         <div className="stat-data">
                                             <div className="stat-val">{metrics.article_count.toLocaleString()}</div>
-                                            <div className="stat-lbl">SIGNS INGESTED</div>
+                                            <div className="stat-lbl">Signals Ingested</div>
                                         </div>
                                     </div>
                                     <div className="stat-box glass-panel">
-                                        <div className="stat-icon"><Zap size={18} color="var(--accent-cyan)" /></div>
+                                        <div className="stat-box-icon"><Zap size={18} /></div>
                                         <div className="stat-data">
                                             <div className="stat-val">{metrics.event_count.toLocaleString()}</div>
-                                            <div className="stat-lbl">CLUSTERS DETECTED</div>
+                                            <div className="stat-lbl">Clusters Detected</div>
                                         </div>
                                     </div>
                                     <div className="stat-box glass-panel">
-                                        <div className="stat-icon"><TrendingUp size={18} color="var(--positive)" /></div>
+                                        <div className="stat-box-icon" style={{ color: 'var(--positive)', background: 'rgba(5,150,105,0.1)' }}>
+                                            <TrendingUp size={18} />
+                                        </div>
                                         <div className="stat-data">
                                             <div className="stat-val">{trends.rising?.length || 0}</div>
-                                            <div className="stat-lbl">RISING DOMAINS</div>
+                                            <div className="stat-lbl">Rising Domains</div>
                                         </div>
                                     </div>
                                     <div className="stat-box glass-panel">
-                                        <div className="stat-icon"><AlertTriangle size={18} color="var(--negative)" /></div>
+                                        <div className="stat-box-icon" style={{ color: 'var(--negative)', background: 'rgba(220,38,38,0.1)' }}>
+                                            <AlertTriangle size={18} />
+                                        </div>
                                         <div className="stat-data">
                                             <div className="stat-val">{anomalies.critical_count || 0}</div>
-                                            <div className="stat-lbl">CRITICAL RISKS</div>
+                                            <div className="stat-lbl">Critical Risks</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* ── Tab Navigation ─── */}
+                            {/* ═══ Tab Navigation ═══ */}
                             <div className="tab-nav">
                                 {tabs.map(tab => (
                                     <button
@@ -379,114 +418,106 @@ const Dashboard = () => {
                                 ))}
                             </div>
 
-                            {/* ═══════════════════════════════════════════════
-                            TAB: OVERVIEW
-                           ═══════════════════════════════════════════════ */}
+                            {/* ═══ TAB: OVERVIEW ═══ */}
                             {activeTab === 'overview' && (
                                 <div className="main-content">
-                                    <div className="section glass-panel">
+                                    <div className="section">
                                         <div className="section-title">
-                                            <TrendingUp size={18} color="var(--accent-purple)" />
-                                            Intelligence Domain Shifts
+                                            <div className="section-title-icon"><TrendingUp size={16} /></div>
+                                            Domain Trends
                                         </div>
                                         <div className="shift-grid">
                                             {trends.rising?.slice(0, 4).map((t, i) => (
                                                 <div key={i} className="shift-card glass-card">
                                                     <div className="shift-header">
                                                         <span className="shift-sector" title={t.sector}>{t.sector}</span>
-                                                        <span className="shift-momentum rising">↑ {t.momentum?.toFixed(1) || t.momentum}</span>
+                                                        <span className="shift-momentum rising">↑ {t.momentum?.toFixed(1)}</span>
                                                     </div>
                                                     <div className="shift-bar"><div className="shift-fill positive" style={{ width: `${(t.confidence || 0.5) * 100}%` }}></div></div>
-                                                    <div className="shift-footer">RELIABILITY: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
+                                                    <div className="shift-footer">CONFIDENCE: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
                                                 </div>
                                             ))}
                                             {trends.falling?.slice(0, 4).map((t, i) => (
-                                                <div key={i} className="shift-card glass-card">
+                                                <div key={`f-${i}`} className="shift-card glass-card">
                                                     <div className="shift-header">
                                                         <span className="shift-sector" title={t.sector}>{t.sector}</span>
                                                         <span className="shift-momentum falling">↓ {Math.abs(t.momentum?.toFixed(1) || t.momentum)}</span>
                                                     </div>
                                                     <div className="shift-bar"><div className="shift-fill negative" style={{ width: `${(t.confidence || 0.5) * 100}%` }}></div></div>
-                                                    <div className="shift-footer">RISK LEVEL: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
+                                                    <div className="shift-footer">RISK: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="section glass-panel">
+                                    <div className="section">
                                         <div className="section-title">
-                                            <Activity size={18} color="var(--accent-cyan)" />
-                                            Market Matrix Heatmap
+                                            <div className="section-title-icon"><Activity size={16} /></div>
+                                            Market Heatmap
                                         </div>
                                         <div className="impact-grid virtualized-scroll">
                                             {impacts.slice(0, 64).map((imp, i) => {
-                                                let cl = imp.direction === "Bullish" ? "bullish" : imp.direction === "Bearish" ? "bearish" : "mixed";
-                                                return (
-                                                    <div key={i} className={`matrix-node ${cl}`} title={`${imp.sector}: ${imp.direction}`}></div>
-                                                );
+                                                let cl = imp.direction === "Bullish" ? "impact-bullish" : imp.direction === "Bearish" ? "impact-bearish" : "impact-mixed";
+                                                return <div key={i} className={`impact-direction ${cl}`} style={{ width: 16, height: 16, fontSize: 0, padding: 0 }} title={`${imp.sector}: ${imp.direction}`}></div>;
                                             })}
                                         </div>
                                         <div className="matrix-legend">
-                                            <span><span className="status-dot status-live"></span> Bullish Signal</span>
-                                            <span><span className="status-dot status-offline" style={{ background: 'var(--negative)' }}></span> Bearish Threat</span>
-                                            <span><span className="status-dot" style={{ background: 'var(--text-muted)' }}></span> Mixed/Neutral</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div className="impact-direction impact-bullish" style={{ width: 12, height: 12 }} /> Bullish</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div className="impact-direction impact-bearish" style={{ width: 12, height: 12 }} /> Bearish</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div className="impact-direction impact-mixed" style={{ width: 12, height: 12 }} /> Mixed</span>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* ═══════════════════════════════════════════════
-                            TAB: LIVE EVENTS (Smart Event Cards)
-                           ═══════════════════════════════════════════════ */}
+                            {/* ═══ TAB: LIVE EVENTS ═══ */}
                             {activeTab === 'events' && (
                                 <div className="main-content single-column">
                                     <div className="smart-event-list">
-                                        {events.length > 0 ? events.map((ev, i) => (
-                                            <div key={i} className={`smart-event-card glass-panel ${expandedEvent === i ? 'expanded' : ''}`} onClick={() => setExpandedEvent(expandedEvent === i ? null : i)}>
+                                        {filteredEvents.length > 0 ? filteredEvents.map((ev, i) => (
+                                            <div key={i} className={`smart-event-card glass-card ${expandedEvent === i ? 'expanded' : ''}`} onClick={() => setExpandedEvent(expandedEvent === i ? null : i)}>
                                                 <div className="event-meta">
-                                                    <div className="event-score" style={{ borderLeft: `4px solid ${ev.sentiment_label === 'Positive' ? 'var(--positive)' : ev.sentiment_label === 'Negative' ? 'var(--negative)' : 'var(--neutral)'}` }}>
+                                                    <div className="event-score" style={{ borderLeftColor: ev.sentiment_label === 'Positive' ? 'var(--positive)' : ev.sentiment_label === 'Negative' ? 'var(--negative)' : 'var(--neutral)' }}>
                                                         <div className="score-val">{ev.importance_score?.toFixed(0) || 50}</div>
-                                                        <div className="score-lbl">IMPORTANCE</div>
+                                                        <div className="score-lbl">Impact</div>
                                                     </div>
                                                     <div className="event-body">
-                                                        <div className="event-header">
-                                                            <div className="event-title">{ev.label}</div>
-                                                        </div>
+                                                        <div className="event-title">{ev.label}</div>
                                                         <div className="event-footer">
-                                                            <div className={`event-sentiment-badge badge-${(ev.sentiment_label || 'neutral').toLowerCase()}`}>
-                                                                {ev.sentiment_label}
-                                                            </div>
-                                                            <div className={`event-sentiment-badge`} style={{ background: 'var(--accent-purple)', color: 'white' }}>
-                                                                Lifecycle: {(ev.lifecycle || 'emerging').toUpperCase()}
-                                                            </div>
-                                                            <div className="event-impacts">
-                                                                {ev.impacts?.map((imp, idx) => (
-                                                                    <span key={idx} className={`impact-chip ${imp.direction.toLowerCase()}`}>
-                                                                        {imp.sector} {imp.direction === 'Bullish' ? '↑' : '↓'}
-                                                                    </span>
-                                                                ))}
-                                                                {ev.size > 1 && <span className="entity-chip"><Globe size={10} /> {ev.size} signals (Weight: {ev.weight_score?.toFixed(2) || '1.00'})</span>}
-                                                            </div>
+                                                            <span className={`badge badge-${(ev.sentiment_label || 'neutral').toLowerCase()}`}>{ev.sentiment_label}</span>
+                                                            <span className="badge" style={{ background: 'rgba(99,102,241,0.06)', color: 'var(--accent-indigo)', border: '1px solid rgba(99,102,241,0.1)' }}>
+                                                                {(ev.lifecycle || 'emerging').toUpperCase()}
+                                                            </span>
+                                                            {ev.size > 1 && <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>{ev.size} signals</span>}
                                                         </div>
                                                     </div>
                                                     <div className="event-chevron">
-                                                        {expandedEvent === i ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                        {expandedEvent === i ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                                     </div>
                                                 </div>
-
                                                 {expandedEvent === i && (
-                                                    <div className="event-expanded-content animate-fadeIn">
+                                                    <div className="event-expanded-content">
                                                         <div className="event-briefing glass-card">
-                                                            <div className="briefing-header"><Sparkles size={14} color="var(--accent-cyan)" /> AI Neural Briefing</div>
-                                                            <div className="briefing-text">{ev.ai_summary || "Analyzing intelligence vectors for this event cluster..."}</div>
+                                                            <div className="briefing-header"><Sparkles size={14} /> AI Intelligence Brief</div>
+                                                            <div className="briefing-text" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{ev.ai_summary || "Analyzing intelligence vectors for this event cluster..."}</div>
                                                         </div>
-                                                        <div className="article-links">
-                                                            {ev.articles && ev.articles.slice(0, 10).map((art, j) => (
-                                                                <a key={j} href={art.url} target="_blank" rel="noopener noreferrer" className="article-link-item" onClick={(e) => e.stopPropagation()}>
+                                                        <div style={{ padding: '0 8px' }}>
+                                                            {ev.articles && ev.articles.slice(0, 8).map((art, j) => (
+                                                                <a
+                                                                    key={j}
+                                                                    href={art.url || '#'}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="article-link-item"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (!art.url || !art.url.startsWith('http')) e.preventDefault();
+                                                                    }}
+                                                                >
                                                                     <span className="title">{art.title}</span>
                                                                     <span className="source-meta">
-                                                                        {art.source && <span className="source-name">{art.source}</span>}
-                                                                        <ExternalLink size={10} color="var(--accent-purple)" />
+                                                                        {art.source && <span>{art.source}</span>}
+                                                                        <ExternalLink size={12} color="var(--accent-indigo)" />
                                                                     </span>
                                                                 </a>
                                                             ))}
@@ -495,171 +526,41 @@ const Dashboard = () => {
                                                 )}
                                             </div>
                                         )) : (
-                                            <div className="empty-state">
-                                                <div className="empty-state-icon">📡</div>
-                                                <div className="empty-state-text">Matrix stabilized. No event clusters detected.</div>
+                                            <div className="empty-state glass-panel">
+                                                <div className="empty-state-icon"><Activity /></div>
+                                                <div className="empty-state-text">No event clusters detected. The system is actively monitoring global pipelines.</div>
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             )}
 
-                            {/* ═══════════════════════════════════════════════
-                            TAB: INTELLIGENCE (Combined Analysis)
-                           ═══════════════════════════════════════════════ */}
-                            {activeTab === 'intelligence' && (
-                                <div className="main-content">
-                                    <div className="section glass-panel">
-                                        <div className="section-title">
-                                            <Layers size={18} color="var(--accent-cyan)" />
-                                            Entity Neural Network
-                                        </div>
-                                        <div className="entity-cloud">
-                                            {entities.entities?.slice(0, 40).map((ent, i) => (
-                                                <div key={i} className="entity-pill glass-card">
-                                                    {entityIcon(ent.label)}
-                                                    <span className="entity-text">{ent.text}</span>
-                                                    <span className="entity-count">{ent.count}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="section glass-panel">
-                                        <div className="section-title">
-                                            <AlertTriangle size={18} color="var(--negative)" />
-                                            Neural Anomalies & Threats
-                                            <span className="section-title-count">({anomalies.total_detected || 0})</span>
-                                        </div>
-                                        <div className="anomaly-list">
-                                            {anomalies.anomalies?.slice(0, 10).map((anom, i) => (
-                                                <div key={i} className={`anomaly-card glass-card ${anom.severity}`}>
-                                                    <div className="anomaly-header">
-                                                        <span className="anomaly-sector">{anom.dimension}</span>
-                                                        <span className={`severity-badge ${anom.severity}`}>{anom.severity.toUpperCase()}</span>
-                                                    </div>
-                                                    <div className="anomaly-msg">{anom.message}</div>
-                                                    <div className="anomaly-meta">Z-Score: {anom.score.toFixed(2)}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            {/* ═══════════════════════════════════════════════
-                            TAB: ARTICLES (Clickable News Feed)
-                           ═══════════════════════════════════════════════ */}
-                            {activeTab === 'articles' && (
-                                <div className="main-content single-column">
-                                    {/* AI TOP PICKS / SUGGESTIONS SECTION */}
-                                    {articlesList.length > 0 && (
-                                        <div className="section glass-panel" style={{ marginBottom: '20px' }}>
-                                            <div className="section-title">
-                                                <Sparkles size={18} color="var(--accent-purple)" />
-                                                AI Top Picks & Suggestions
-                                                <span className="section-title-count">(Curated for you)</span>
-                                            </div>
-                                            <div className="top-picks-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px', marginTop: '15px' }}>
-                                                {[...articlesList]
-                                                    .sort((a, b) => Math.abs(b.sentiment_score || 0) - Math.abs(a.sentiment_score || 0))
-                                                    .slice(0, 3)
-                                                    .map((art, i) => (
-                                                        <a key={`pick-${i}`} href={art.url || '#'} target="_blank" rel="noopener noreferrer" className="top-pick-card glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '15px', textDecoration: 'none' }}>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <span className="badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-purple)', border: '1px solid rgba(99, 102, 241, 0.2)', padding: '4px 10px' }}>{['🔥 Hot Pick', '💡 Deep Insight', '📈 High Impact'][i]}</span>
-                                                                <ExternalLink size={14} color="var(--accent-purple)" />
-                                                            </div>
-                                                            <div style={{ fontSize: 'var(--font-base)', fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.5' }}>{art.title}</div>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: '600' }}>
-                                                                <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>{art.sentiment_label}</span>
-                                                                <span className="article-source-badge">{art.source}</span>
-                                                            </div>
-                                                        </a>
-                                                    ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="section glass-panel">
-                                        <div className="section-title">
-                                            <Newspaper size={18} color="var(--accent-blue)" />
-                                            Live News Feed
-                                            <span className="section-title-count">(Click any article to read on its original source)</span>
-                                        </div>
-                                        <div className="events-list">
-                                            {articlesList.length > 0 ? articlesList.map((art, i) => (
-                                                <a
-                                                    key={art.id || i}
-                                                    className="article-feed-card glass-card"
-                                                    href={art.url || '#'}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <div className="article-feed-main">
-                                                        <div className="article-feed-title">
-                                                            <FileText size={14} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: 2 }} />
-                                                            {art.title}
-                                                        </div>
-                                                        <div className="article-feed-meta">
-                                                            <span className="article-source-badge">{art.source}</span>
-                                                            <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>
-                                                                {art.sentiment_label}
-                                                            </span>
-                                                            <span className={`badge ${art.fake_news_label === 'Fake' ? 'badge-negative' : 'badge-neutral'}`} style={{ border: art.fake_news_label === 'Fake' ? '1px solid var(--negative)' : '1px solid var(--accent-cyan)' }}>
-                                                                {art.fake_news_label === 'Fake' ? '🚨 Disinformation Flags' : 'Verified Real'} ({(art.fake_news_score * 100).toFixed(0)}%)
-                                                            </span>
-                                                            <span style={{ color: 'var(--text-muted)', fontSize: 'var(--font-xs)', fontWeight: '700', fontFamily: "'JetBrains Mono', monospace" }}>
-                                                                Score: {(art.sentiment_score || 0).toFixed(2)}
-                                                            </span>
-                                                            {art.published_at && (
-                                                                <span style={{ color: 'var(--text-muted)', fontSize: 'var(--font-xs)', fontWeight: '600' }}>
-                                                                    {new Date(art.published_at).toLocaleDateString()}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <ExternalLink size={16} color="var(--accent-purple)" style={{ flexShrink: 0 }} />
-                                                </a>
-                                            )) : (
-                                                <div className="empty-state">
-                                                    <div className="empty-state-icon">📰</div>
-                                                    <div className="empty-state-text">No articles yet. Run the pipeline to collect news.</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ═══════════════════════════════════════════════
-                            TAB: SECTORS (Full Sector View)
-                           ═══════════════════════════════════════════════ */}
+                            {/* ═══ TAB: SECTORS ═══ */}
                             {activeTab === 'sectors' && (
                                 <div className="main-content">
-                                    <div className="section glass-panel">
+                                    <div className="section">
                                         <div className="section-title">
-                                            <Activity size={18} color="var(--accent-purple)" />
-                                            Deep Intelligence Matrix
-                                            <span className="section-title-count">({impacts.length.toLocaleString()} sectors analyzed)</span>
+                                            <div className="section-title-icon"><Activity size={16} /></div>
+                                            Sector Intelligence
+                                            <span className="section-title-count">({impacts.length} sectors)</span>
                                         </div>
-                                        <div className="search-box glass-panel" style={{ width: '100%', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.03)' }}>
-                                            <Search className="search-icon" size={16} color="var(--text-muted)" />
+                                        <div className="search-box" style={{ width: '100%', marginBottom: '16px', background: 'rgba(0,0,0,0.02)' }}>
+                                            <Search size={16} color="var(--text-muted)" />
                                             <input
-                                                type="text" placeholder="Search across all AI-analyzed sectors..."
-                                                style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontWeight: '500', width: '100%', padding: '10px 0', fontSize: 'var(--font-sm)' }}
+                                                type="text" placeholder="Filter sectors..."
                                                 value={sectorSearch}
                                                 onChange={handleSectorSearch}
                                             />
                                         </div>
-                                        <div className="impact-grid virtualized-scroll" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-                                            {filteredImpacts.slice(0, 150).map((imp, i) => {
+                                        <div className="impact-grid virtualized-scroll" style={{ maxHeight: 'calc(100vh - 420px)' }}>
+                                            {filteredImpacts.slice(0, 120).map((imp, i) => {
                                                 let arr = "→", cl = "impact-mixed";
                                                 if (imp.direction === "Bullish") { arr = "↑"; cl = "impact-bullish"; }
                                                 else if (imp.direction === "Bearish") { arr = "↓"; cl = "impact-bearish"; }
                                                 return (
-                                                    <div key={i} className="impact-cell mini-cell glass-card" onClick={() => { setSectorSearch(imp.sector); fetchSectorNews(imp.sector); }} style={{ cursor: 'pointer' }}>
-                                                        <div className="impact-sector" title={imp.sector}>{imp.sector}</div>
+                                                    <div key={i} className="mini-cell glass-card" onClick={() => { setSectorSearch(imp.sector); fetchSectorNews(imp.sector); }}>
                                                         <div className={`impact-direction ${cl}`}>{arr}</div>
+                                                        <div className="impact-sector" title={imp.sector}>{imp.sector}</div>
                                                         <div className="impact-stats">
                                                             <span className="up">▲{imp.bullish}</span> • <span className="down">▼{imp.bearish}</span>
                                                         </div>
@@ -669,34 +570,39 @@ const Dashboard = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section glass-panel">
+                                    <div className="section">
                                         <div className="section-title">
-                                            <Sparkles size={18} color="var(--accent-cyan)" />
-                                            Linked Sector Intel (Past News)
-                                            {sectorSearch && <span className="section-title-count" style={{ color: 'var(--accent-purple)' }}> - {sectorSearch}</span>}
+                                            <div className="section-title-icon"><Globe size={16} /></div>
+                                            Sector News
+                                            {sectorSearch && <span className="section-title-count" style={{ color: 'var(--accent-indigo)' }}>— {sectorSearch}</span>}
                                         </div>
                                         <div className="events-list">
                                             {isSearchingSector ? (
-                                                <div className="empty-state">
-                                                    <div className="loading-spinner" style={{ width: 30, height: 30 }}></div>
-                                                    <div className="empty-state-text">Retrieving past intelligence vectors...</div>
+                                                <div className="loading-container" style={{ minHeight: '200px' }}>
+                                                    <div className="loading-spinner" style={{ width: 32, height: 32 }}></div>
                                                 </div>
                                             ) : sectorNews.length > 0 ? sectorNews.map((art, i) => (
-                                                <a key={art.id || i} className="article-feed-card glass-card" href={art.url || '#'} target="_blank" rel="noopener noreferrer">
+                                                <a
+                                                    key={art.id || i}
+                                                    className="article-feed-card glass-card"
+                                                    href={art.url || '#'}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={(e) => { if (!art.url || !art.url.startsWith('http')) e.preventDefault(); }}
+                                                >
                                                     <div className="article-feed-main">
-                                                        <div className="article-feed-title" style={{ fontSize: 'var(--font-sm)', fontWeight: '600' }}>{art.title}</div>
+                                                        <div className="article-feed-title">{art.title}</div>
                                                         <div className="article-feed-meta">
                                                             <span className="article-source-badge">{art.source}</span>
-                                                            <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>{art.sentiment_label}</span>
-                                                            <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: '600' }}>{art.published_at ? new Date(art.published_at).toLocaleDateString() : ''}</span>
+                                                            <span className={`badge badge-${(art.sentiment_label || 'neutral').toLowerCase()}`}>{art.sentiment_label}</span>
                                                         </div>
                                                     </div>
-                                                    <ExternalLink size={14} color="var(--accent-purple)" />
+                                                    <ExternalLink size={16} color="var(--accent-indigo)" />
                                                 </a>
                                             )) : (
                                                 <div className="empty-state">
-                                                    <div className="empty-state-icon">📚</div>
-                                                    <div className="empty-state-text">Select a sector to view contributing news articles.</div>
+                                                    <div className="empty-state-icon"><Layers /></div>
+                                                    <div className="empty-state-text">Select a sector to view related intelligence and analytics.</div>
                                                 </div>
                                             )}
                                         </div>
@@ -704,211 +610,152 @@ const Dashboard = () => {
                                 </div>
                             )}
 
-                            {/* ═══════════════════════════════════════════════
-                            TAB: EVENTS (Full Events View)
-                           ═══════════════════════════════════════════════ */}
-                            {activeTab === 'events' && (
+                            {/* ═══ TAB: NEWS FEED ═══ */}
+                            {activeTab === 'articles' && (
                                 <div className="main-content single-column">
-                                    <div className="section glass-panel">
+                                    {/* Top Picks */}
+                                    {articlesList.length > 0 && !globalSearch && (
+                                        <div className="section" style={{ minHeight: 'auto', marginBottom: '16px' }}>
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><Star size={16} /></div>
+                                                AI Top Picks
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+                                                {[...articlesList]
+                                                    .sort((a, b) => Math.abs(b.sentiment_score || 0) - Math.abs(a.sentiment_score || 0))
+                                                    .slice(0, 3)
+                                                    .map((art, i) => (
+                                                        <a
+                                                            key={`pick-${i}`}
+                                                            href={art.url || '#'}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="top-pick-card glass-card"
+                                                            onClick={(e) => { if (!art.url || !art.url.startsWith('http')) e.preventDefault(); }}
+                                                        >
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <span className="badge" style={{ background: 'rgba(99,102,241,0.06)', color: 'var(--accent-indigo)' }}>
+                                                                    {['🔥 Trending Highlight', '💡 Strategic Insight', '📈 High Impact'][i]}
+                                                                </span>
+                                                                <ExternalLink size={14} color="var(--text-muted)" />
+                                                            </div>
+                                                            <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.15rem', fontWeight: '700', color: 'var(--text-primary)', lineHeight: '1.4' }}>{art.title}</div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                                                                <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>{art.sentiment_label}</span>
+                                                                <span className="article-source-badge">{art.source}</span>
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Full Feed */}
+                                    <div className="section">
                                         <div className="section-title">
-                                            <Zap size={18} color="var(--accent-cyan)" />
-                                            AI-Detected Event Clusters
-                                            <span className="section-title-count">(DBSCAN Clustering + Sentence Embeddings)</span>
+                                            <div className="section-title-icon"><Newspaper size={16} /></div>
+                                            {globalSearch.length >= 3 ? `Search Results: "${globalSearch}"` : 'Live News Feed'}
+                                            <span className="section-title-count">
+                                                ({displayArticles.length} signals monitored)
+                                            </span>
                                         </div>
                                         <div className="events-list">
-                                            {events.map((ev, i) => (
-                                                <div key={ev.id || i} className="event-card glass-card" onClick={() => setExpandedEvent(expandedEvent === i ? null : i)}>
-                                                    <div className="event-header">
-                                                        <div className="event-title">
-                                                            <div className="event-title-icon">
-                                                                {ev.is_cluster ? <Link size={13} color="var(--accent-purple)" /> : <FileText size={13} />}
-                                                            </div>
-                                                            {(ev.label || '').substring(0, 120)}{(ev.label || '').length > 120 ? '...' : ''}
+                                            {displayArticles.length > 0 ? displayArticles.map((art, i) => (
+                                                <a
+                                                    key={art.id || i}
+                                                    className="article-feed-card glass-card"
+                                                    href={art.url || '#'}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={(e) => { if (!art.url || !art.url.startsWith('http')) e.preventDefault(); }}
+                                                >
+                                                    <div className="article-feed-main">
+                                                        <div className="article-feed-title">
+                                                            <FileText size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: 2 }} />
+                                                            {art.title}
                                                         </div>
-                                                        {expandedEvent === i ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                                    </div>
-                                                    <div className="event-meta">
-                                                        <span className={`badge badge-${(ev.sentiment_label || '').toLowerCase()}`}>{ev.sentiment_label}</span>
-                                                        <span>Score: {(ev.sentiment_score || 0).toFixed(3)}</span>
-                                                        <span>•</span>
-                                                        <span>{ev.size} Article{ev.size !== 1 ? 's' : ''}</span>
-                                                        {ev.is_cluster && <span className="badge" style={{ background: 'rgba(124,108,240,0.15)', color: 'var(--accent-purple)', border: '1px solid rgba(124,108,240,0.3)' }}>CLUSTER</span>}
-                                                    </div>
-                                                    {expandedEvent === i && ev.articles && (
-                                                        <div className="event-articles">
-                                                            {ev.articles.map((art, j) => (
-                                                                <a key={j} className="article-item article-link" href={art.url || '#'} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                                                                    <span className="article-title">{art.title}</span>
-                                                                    <span className="article-meta-row">
-                                                                        {art.source && <span className="article-source-badge">{art.source}</span>}
-                                                                        <span className={`badge badge-${(art.sentiment_label || '').toLowerCase()}`}>{art.sentiment_label}</span>
-                                                                        <ExternalLink size={11} color="var(--accent-purple)" />
-                                                                    </span>
-                                                                </a>
-                                                            ))}
+                                                        <div className="article-feed-meta">
+                                                            <span className="article-source-badge">{art.source}</span>
+                                                            <span className={`badge badge-${(art.sentiment_label || 'neutral').toLowerCase()}`}>{art.sentiment_label}</span>
+                                                            <span className={`badge ${art.fake_news_label === 'Fake' ? 'badge-negative' : 'badge-neutral'}`}>
+                                                                {art.fake_news_label === 'Fake' ? '🚨 Flagged' : '✓ Verified'} ({(art.fake_news_score * 100).toFixed(0)}%)
+                                                            </span>
+                                                            {art.published_at && (
+                                                                <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: '600' }}>
+                                                                    {new Date(art.published_at).toLocaleDateString()}
+                                                                </span>
+                                                            )}
                                                         </div>
-                                                    )}
+                                                    </div>
+                                                    <ExternalLink size={18} color="var(--accent-indigo)" style={{ flexShrink: 0 }} />
+                                                </a>
+                                            )) : (
+                                                <div className="empty-state">
+                                                    <div className="empty-state-icon"><Newspaper /></div>
+                                                    <div className="empty-state-text">
+                                                        {globalSearch ? `No intelligence found for "${globalSearch}" in the global database.` : 'No signals ingested yet. System is awaiting pipeline execution.'}
+                                                    </div>
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* ═══════════════════════════════════════════════
-                            TAB: NER ENTITIES (spaCy-extracted)
-                           ═══════════════════════════════════════════════ */}
-                            {activeTab === 'entities' && (
-                                <div className="main-content single-column">
-                                    <div className="section glass-panel">
-                                        <div className="section-title">
-                                            <Brain size={18} color="var(--accent-blue)" />
-                                            AI Named Entity Recognition
-                                            <span className="section-title-count">(spaCy NLP Engine)</span>
-                                        </div>
-
-                                        {entities.grouped && Object.keys(entities.grouped).length > 0 ? (
-                                            <>
-                                                {entities.grouped.ORG && entities.grouped.ORG.length > 0 && (
-                                                    <>
-                                                        <div className="entity-section-title"><Building size={14} /> Organizations</div>
-                                                        <div className="entity-cloud">
-                                                            {entities.grouped.ORG.map((ent, i) => (
-                                                                <div key={i} className="entity-chip entity-ORG" style={{ animationDelay: `${i * 0.03}s` }}>
-                                                                    <Building size={12} />
-                                                                    {ent.text}
-                                                                    <span className="entity-count">×{ent.count}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                )}
-
-                                                {entities.grouped.PERSON && entities.grouped.PERSON.length > 0 && (
-                                                    <>
-                                                        <div className="entity-section-title"><Users size={14} /> People</div>
-                                                        <div className="entity-cloud">
-                                                            {entities.grouped.PERSON.map((ent, i) => (
-                                                                <div key={i} className="entity-chip entity-PERSON" style={{ animationDelay: `${i * 0.03}s` }}>
-                                                                    <Users size={12} />
-                                                                    {ent.text}
-                                                                    <span className="entity-count">×{ent.count}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                )}
-
-                                                {entities.grouped.GPE && entities.grouped.GPE.length > 0 && (
-                                                    <>
-                                                        <div className="entity-section-title"><MapPin size={14} /> Locations</div>
-                                                        <div className="entity-cloud">
-                                                            {entities.grouped.GPE.map((ent, i) => (
-                                                                <div key={i} className="entity-chip entity-GPE" style={{ animationDelay: `${i * 0.03}s` }}>
-                                                                    <MapPin size={12} />
-                                                                    {ent.text}
-                                                                    <span className="entity-count">×{ent.count}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                )}
-
-                                                {entities.grouped.MONEY && entities.grouped.MONEY.length > 0 && (
-                                                    <>
-                                                        <div className="entity-section-title"><DollarSign size={14} /> Financial Amounts</div>
-                                                        <div className="entity-cloud">
-                                                            {entities.grouped.MONEY.map((ent, i) => (
-                                                                <div key={i} className="entity-chip entity-MONEY" style={{ animationDelay: `${i * 0.03}s` }}>
-                                                                    <DollarSign size={12} />
-                                                                    {ent.text}
-                                                                    <span className="entity-count">×{ent.count}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                )}
-
-                                                {entities.grouped.OTHER && entities.grouped.OTHER.length > 0 && (
-                                                    <>
-                                                        <div className="entity-section-title"><Sparkles size={14} /> Other Entities</div>
-                                                        <div className="entity-cloud">
-                                                            {entities.grouped.OTHER.map((ent, i) => (
-                                                                <div key={i} className="entity-chip entity-OTHER" style={{ animationDelay: `${i * 0.03}s` }}>
-                                                                    <Sparkles size={12} />
-                                                                    {ent.text}
-                                                                    <span className="entity-count">×{ent.count}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <div className="empty-state">
-                                                <div className="empty-state-icon">🧠</div>
-                                                <div className="empty-state-text">Run the pipeline to extract entities with AI</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ═══════════════════════════════════════════════
-                            TAB: ANALYTICS (Pro Dashboards)
-                           ═══════════════════════════════════════════════ */}
+                            {/* ═══ TAB: ANALYTICS ═══ */}
                             {activeTab === 'analytics' && (
                                 <div className="main-content">
-                                    <div className="section glass-panel">
+                                    <div className="section">
                                         <div className="section-title">
-                                            <BarChart2 size={18} color="var(--accent-cyan)" />
-                                            Sentiment Dynamics
+                                            <div className="section-title-icon"><BarChart2 size={16} /></div>
+                                            Sentiment Trajectory
                                         </div>
-                                        <div style={{ height: '300px', width: '100%' }}>
+                                        <div style={{ height: '340px', width: '100%', padding: '16px 0' }}>
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <AreaChart data={[
-                                                    { name: 'Prev', positive: metrics.sentiment_distribution.Positive * 0.8, negative: metrics.sentiment_distribution.Negative * 0.9 },
-                                                    { name: 'Current', positive: metrics.sentiment_distribution.Positive, negative: metrics.sentiment_distribution.Negative }
+                                                    { name: 'Positive', positive: totalPositive, negative: 0 },
+                                                    { name: 'Neutral', positive: 0, negative: 0 },
+                                                    { name: 'Negative', positive: 0, negative: totalNegative },
                                                 ]}>
                                                     <defs>
                                                         <linearGradient id="pos" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="var(--positive)" stopOpacity={0.3} />
+                                                            <stop offset="5%" stopColor="var(--positive)" stopOpacity={0.2} />
                                                             <stop offset="95%" stopColor="var(--positive)" stopOpacity={0} />
                                                         </linearGradient>
                                                         <linearGradient id="neg" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="var(--negative)" stopOpacity={0.3} />
+                                                            <stop offset="5%" stopColor="var(--negative)" stopOpacity={0.2} />
                                                             <stop offset="95%" stopColor="var(--negative)" stopOpacity={0} />
                                                         </linearGradient>
                                                     </defs>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} />
-                                                    <YAxis stroke="var(--text-muted)" fontSize={10} />
-                                                    <Tooltip contentStyle={{ background: '#0c0c1a', border: '1px solid var(--glass-border)' }} />
-                                                    <Area type="monotone" dataKey="positive" stroke="var(--positive)" fillOpacity={1} fill="url(#pos)" />
-                                                    <Area type="monotone" dataKey="negative" stroke="var(--negative)" fillOpacity={1} fill="url(#neg)" />
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                                                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                                    <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                                    <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
+                                                    <Area type="monotone" dataKey="positive" stroke="var(--positive)" strokeWidth={3} fillOpacity={1} fill="url(#pos)" />
+                                                    <Area type="monotone" dataKey="negative" stroke="var(--negative)" strokeWidth={3} fillOpacity={1} fill="url(#neg)" />
                                                 </AreaChart>
                                             </ResponsiveContainer>
                                         </div>
-                                        <div className="analytics-insight">
-                                            The intelligence matrix shows a <strong>{((metrics.sentiment_distribution.Positive / (metrics.article_count || 1)) * 100).toFixed(1)}%</strong> overall positive density across recent signals.
+                                        <div style={{ padding: '16px', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.1)', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+                                            <strong style={{ color: 'var(--text-primary)' }}>AI Insight:</strong> The intelligence matrix shows a <strong>{((totalPositive / (metrics.article_count || 1)) * 100).toFixed(1)}%</strong> overall positive density across {metrics.article_count.toLocaleString()} signals.
                                         </div>
                                     </div>
 
-                                    <div className="section glass-panel">
+                                    <div className="section">
                                         <div className="section-title">
-                                            <PieChartIcon size={18} color="var(--accent-purple)" />
-                                            Intelligence Domain Distribution
+                                            <div className="section-title-icon"><PieChartIcon size={16} /></div>
+                                            Sector Distribution Analysis
                                         </div>
-                                        <div style={{ height: '300px', width: '100%' }}>
+                                        <div style={{ height: '340px', width: '100%', padding: '16px 0' }}>
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <ReBarChart data={impacts.slice(0, 10)}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                                    <XAxis dataKey="sector" stroke="var(--text-muted)" fontSize={8} interval={0} angle={-30} textAnchor="end" height={60} />
-                                                    <YAxis stroke="var(--text-muted)" fontSize={10} />
-                                                    <Tooltip contentStyle={{ background: '#0c0c1a', border: '1px solid var(--glass-border)' }} />
-                                                    <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-                                                        {impacts.slice(0, 10).map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? 'var(--accent-purple)' : 'var(--accent-blue)'} />
+                                                <ReBarChart data={impacts.slice(0, 8)} margin={{ top: 20, right: 30, left: 0, bottom: 40 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                                                    <XAxis dataKey="sector" stroke="var(--text-muted)" fontSize={11} interval={0} angle={-35} textAnchor="end" tickLine={false} axisLine={false} />
+                                                    <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                                    <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
+                                                    <Bar dataKey="total" radius={[6, 6, 0, 0]} barSize={40}>
+                                                        {impacts.slice(0, 8).map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? 'var(--accent-indigo)' : 'var(--accent-cyan)'} opacity={0.8} />
                                                         ))}
                                                     </Bar>
                                                 </ReBarChart>
@@ -917,12 +764,11 @@ const Dashboard = () => {
                                     </div>
                                 </div>
                             )}
-
                         </>
                     )}
                 </div>
             )}
-        </>
+        </ErrorBoundary>
     );
 };
 

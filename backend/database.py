@@ -11,6 +11,9 @@ import sqlite3
 from datetime import datetime
 
 from backend import config  # type: ignore
+from backend.supabase_client import get_supabase_client
+
+supabase = get_supabase_client()
 
 logger = logging.getLogger("veiloracle.database")
 
@@ -39,6 +42,7 @@ def migrate_db(conn: sqlite3.Connection):
         ("articles", "fake_news_label","ALTER TABLE articles ADD COLUMN fake_news_label TEXT DEFAULT 'Real'"),
         ("articles", "fake_news_score","ALTER TABLE articles ADD COLUMN fake_news_score REAL DEFAULT 1.0"),
         ("articles", "embedding_json", "ALTER TABLE articles ADD COLUMN embedding_json TEXT DEFAULT ''"),
+        ("articles", "language",       "ALTER TABLE articles ADD COLUMN language TEXT DEFAULT 'en'"),
     ]
     for table, col, sql in migrations:
         if not _column_exists(conn, table, col):
@@ -60,7 +64,7 @@ def init_db():
                 clean_text TEXT DEFAULT '', sentiment_label TEXT DEFAULT 'Neutral',
                 sentiment_score REAL DEFAULT 0.0, impacts_json TEXT DEFAULT '[]',
                 fake_news_label TEXT DEFAULT 'Real', fake_news_score REAL DEFAULT 1.0,
-                embedding_json TEXT DEFAULT '',
+                embedding_json TEXT DEFAULT '', language TEXT DEFAULT 'en',
                 created_at TEXT DEFAULT (datetime('now')), pipeline_run_id TEXT DEFAULT '');
             CREATE TABLE IF NOT EXISTS events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, event_id TEXT NOT NULL, label TEXT NOT NULL,
@@ -104,16 +108,45 @@ def save_articles(articles: list, pipeline_run_id: str = "") -> list:
             cur = conn.execute(
                 "INSERT INTO articles (title,description,source,url,published_at,clean_text,"
                 "sentiment_label,sentiment_score,impacts_json,fake_news_label,fake_news_score,"
-                "embedding_json,pipeline_run_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "embedding_json,language,pipeline_run_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (a.get("title", ""), a.get("description", ""), a.get("source", "Unknown"),
                  a.get("url", ""), a.get("published_at", ""), a.get("clean_text", ""),
                  s.get("label", "Neutral"), float(s.get("compound", 0.0)),
                  json.dumps(a.get("impacts", [])),
                  fn.get("label", "Real"), float(fn.get("score", 1.0)),
-                 emb_json, pipeline_run_id))
+                 emb_json, a.get("multilingual", {}).get("language", "en"), pipeline_run_id))
             ids.append(cur.lastrowid)
         conn.commit()
         logger.info("Saved %d articles.", len(ids))
+
+        # Supabase Integration
+        if supabase:
+            try:
+                supabase_data = []
+                for a, db_id in zip(articles, ids):
+                    s = a.get("sentiment", {})
+                    fn = a.get("fake_news_analysis", {})
+                    emb = a.get("embedding")
+                    supabase_data.append({
+                        "id": db_id,
+                        "title": a.get("title", ""),
+                        "description": a.get("description", ""),
+                        "source": a.get("source", "Unknown"),
+                        "url": a.get("url", ""),
+                        "published_at": a.get("published_at", ""),
+                        "clean_text": a.get("clean_text", ""),
+                        "sentiment_label": s.get("label", "Neutral"),
+                        "sentiment_score": float(s.get("compound", 0.0)),
+                        "impacts_json": a.get("impacts", []),
+                        "fake_news_label": fn.get("label", "Real"),
+                        "fake_news_score": float(fn.get("score", 1.0)),
+                        "language": a.get("multilingual", {}).get("language", "en"),
+                        "pipeline_run_id": pipeline_run_id
+                    })
+                supabase.table("articles").upsert(supabase_data).execute()
+                logger.info("Synced %d articles to Supabase.", len(supabase_data))
+            except Exception as e:
+                logger.error("Failed to sync articles to Supabase: %s", e)
     finally:
         conn.close()
     return ids

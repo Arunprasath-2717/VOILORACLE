@@ -170,7 +170,9 @@ def get_articles(limit=100):
             "sentiment_score": _round_dp(score, 3),
             "published_at": a["published_at"],
             "fake_news_label": a.get("fake_news_label", "Real"),
-            "fake_news_score": a.get("fake_news_score", 1.0)
+            "fake_news_score": a.get("fake_news_score", 1.0),
+            "url": a.get("url", ""),
+            "language": a.get("language", "en")
         })
         i = i + 1
     return result
@@ -193,7 +195,8 @@ def get_articles_by_sector(sector: str, limit: int = 50):
             "published_at": a["published_at"],
             "fake_news_label": a.get("fake_news_label", "Real"),
             "fake_news_score": a.get("fake_news_score", 1.0),
-            "url": a.get("url", "")
+            "url": a.get("url", ""),
+            "language": a.get("language", "en")
         })
         i = i + 1
     return result
