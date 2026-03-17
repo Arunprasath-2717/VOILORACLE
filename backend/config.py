@@ -53,7 +53,7 @@ SENTIMENT_MODEL = "cardiffnlp/twitter-roberta-base-sentiment"
 NER_MODEL = "en_core_web_sm"  # spaCy model
 
 # ── Collection Settings ──────────────────────────────────────────────────────
-FETCH_INTERVAL_SECONDS = 300
+FETCH_INTERVAL_SECONDS = 180
 MAX_ARTICLES_PER_FETCH = 50
 NEWS_CATEGORIES = ["general", "technology", "business", "science", "health", "sports", "entertainment"]
 NEWS_COUNTRY = "us"
@@ -61,21 +61,40 @@ NEWS_COUNTRY = "us"
 # ── RSS Feed URLs (free, unlimited, global multi-domain) ─────────────────────
 # Note: optimized for reliability and speed (removed slow feeds)
 RSS_FEEDS = [
-    # Global Headlines (most reliable)
+    # ── Global Headlines (most reliable) ──
     "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en",
     "https://feeds.bbci.co.uk/news/rss.xml",
-    # Science & Technology
-    "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
-    # Sports
-    "https://feeds.bbci.co.uk/sport/rss.xml",
-    # Business & Economy
-    "https://feeds.bbci.co.uk/news/business/rss.xml",
-    # Health
-    "https://feeds.bbci.co.uk/news/health/rss.xml",
-    # Entertainment & Arts
-    "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
-    # World News
     "https://feeds.bbci.co.uk/news/world/rss.xml",
+    # ── Science & Technology ──
+    "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+    "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    # ── Sports (comprehensive) ──
+    "https://feeds.bbci.co.uk/sport/rss.xml",
+    "https://www.espn.com/espn/rss/news",
+    # ── Business & Economy ──
+    "https://feeds.bbci.co.uk/news/business/rss.xml",
+    # ── Health ──
+    "https://feeds.bbci.co.uk/news/health/rss.xml",
+    # ── Entertainment & Arts ──
+    "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+    # ── Politics & Law ──
+    "https://feeds.bbci.co.uk/news/politics/rss.xml",
+    # ── Education ──
+    "https://feeds.bbci.co.uk/news/education/rss.xml",
+    # ── Al Jazeera (International) ──
+    "https://www.aljazeera.com/xml/rss/all.xml",
+    # ── NPR (Multi-domain US) ──
+    "https://feeds.npr.org/1001/rss.xml",
+    # ── Reuters (requires no key) ──
+    "https://news.google.com/rss/search?q=reuters&hl=en-US&gl=US&ceid=US:en",
+    # ── Asia-Pacific coverage ──
+    "https://news.google.com/rss/search?q=asia+news&hl=en-US&gl=US&ceid=US:en",
+    # ── Africa coverage ──
+    "https://news.google.com/rss/search?q=africa+news&hl=en-US&gl=US&ceid=US:en",
+    # ── Middle East coverage ──
+    "https://news.google.com/rss/search?q=middle+east+news&hl=en-US&gl=US&ceid=US:en",
+    # ── Latin America coverage ──
+    "https://news.google.com/rss/search?q=latin+america+news&hl=en-US&gl=US&ceid=US:en",
 ]
 
 # ── Artificial Intelligence Models \u0026 Clustering ─────────────────────────────

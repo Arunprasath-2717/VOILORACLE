@@ -163,7 +163,7 @@ def fetch_from_gnews() -> list[dict]:
         logger.info("No GNEWS_API_KEY — skipping GNews.")
         return []
     try:
-        url = f"https://gnews.io/api/v4/top-headlines?category=general&lang=en&apikey={config.GNEWS_API_KEY}&max=50"
+        url = f"https://gnews.io/api/v4/top-headlines?category=general&lang=en&apikey={config.GNEWS_API_KEY}&max=10"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
@@ -178,6 +178,26 @@ def fetch_from_gnews() -> list[dict]:
                 "url": raw.get("url", ""),
                 "published_at": raw.get("publishedAt", datetime.utcnow().isoformat())
             })
+
+        # Fetch across multiple categories for broad domain coverage
+        for cat in ["business", "technology", "science", "health", "sports", "entertainment", "world"]:
+            try:
+                cat_url = f"https://gnews.io/api/v4/top-headlines?category={cat}&lang=en&apikey={config.GNEWS_API_KEY}&max=5"
+                cat_resp = requests.get(cat_url, timeout=8)
+                cat_resp.raise_for_status()
+                cat_data = cat_resp.json()
+                for raw in cat_data.get("articles", []):
+                    if not raw.get("title"):
+                        continue
+                    articles.append({
+                        "title": raw["title"],
+                        "description": raw.get("description") or "",
+                        "source": raw.get("source", {}).get("name", "GNews"),
+                        "url": raw.get("url", ""),
+                        "published_at": raw.get("publishedAt", datetime.utcnow().isoformat())
+                    })
+            except Exception:
+                pass  # Non-critical per-category failure
         logger.info("✓ GNews: %d articles fetched", len(articles))
         return articles
     except Exception as e:
@@ -311,10 +331,9 @@ def collect_news() -> list[dict]:
         for cat in config.NEWS_CATEGORIES:
             articles.extend(fetch_from_newsapi(category=cat))
             
-    # 8. RSS Feeds (always fallback if needed)
-    if len(articles) < 40:
-        logger.info("▸ Fetching from RSS feeds (fallback)...")
-        articles.extend(fetch_from_rss(max_per_feed=10))
+    # 8. RSS Feeds (always fetch for maximum domain breadth)
+    logger.info("▸ Fetching from RSS feeds (multi-domain)...")
+    articles.extend(fetch_from_rss(max_per_feed=10))
         
     # 5. Sample data (last resort)
     if not articles:

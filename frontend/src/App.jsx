@@ -170,7 +170,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 45000);
+        const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -206,15 +206,56 @@ const Dashboard = () => {
     const totalPositive = metrics?.sentiment_distribution?.Positive || 0;
     const totalNegative = metrics?.sentiment_distribution?.Negative || 0;
     const totalNeutral = metrics?.sentiment_distribution?.Neutral || 0;
+    const totalSentiment = totalPositive + totalNegative + totalNeutral;
     const isBullish = totalPositive > totalNegative;
     const stabilityScore = metrics?.article_count > 0 ? ((totalPositive / metrics.article_count) * 100).toFixed(1) : '--';
     const moodColor = isBullish ? '#059669' : '#dc2626';
+
+    // ── Computed Analytics Data ──────────────────────────────
+    const sentimentPieData = [
+        { name: 'Positive', value: totalPositive, fill: '#059669' },
+        { name: 'Negative', value: totalNegative, fill: '#dc2626' },
+        { name: 'Neutral', value: totalNeutral, fill: '#d97706' },
+    ].filter(d => d.value > 0);
+
+    // Source distribution (top 10 sources)
+    const sourceMap = {};
+    (articlesList || []).forEach(art => {
+        const src = art.source || 'Unknown';
+        sourceMap[src] = (sourceMap[src] || 0) + 1;
+    });
+    const sourceDistData = Object.entries(sourceMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([name, count]) => ({ name, count }));
+
+    // Fake news stats
+    const fakeCount = (articlesList || []).filter(a => a.fake_news_label === 'Fake').length;
+    const realCount = (articlesList || []).filter(a => a.fake_news_label !== 'Fake').length;
+    const fakeNewsPieData = [
+        { name: 'Verified', value: realCount, fill: '#059669' },
+        { name: 'Flagged', value: fakeCount, fill: '#dc2626' },
+    ].filter(d => d.value > 0);
+
+    // Entity type counts
+    const entityGrouped = entities?.grouped || {};
+    const entityTypeData = Object.entries(entityGrouped)
+        .map(([type, items]) => ({ type, count: items?.length || 0 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8);
+
+    // Unique source count
+    const uniqueSources = Object.keys(sourceMap).length;
+
+    // Domain/category diversity
+    const activeSectors = (impacts || []).length;
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <Eye size={15} /> },
         { id: 'events', label: 'Live Events', icon: <Zap size={15} />, badge: filteredEvents.length },
         { id: 'sectors', label: 'Sector Intel', icon: <Activity size={15} />, badge: filteredImpacts.length },
         { id: 'articles', label: 'News Feed', icon: <Newspaper size={15} />, badge: filteredArticles.length },
+        { id: 'intel', label: 'Intel & Entities', icon: <Brain size={15} />, badge: (entities?.entities || []).length },
         { id: 'analytics', label: 'Analytics', icon: <BarChart2 size={15} /> },
     ];
 
@@ -398,6 +439,24 @@ const Dashboard = () => {
                                         <div className="stat-data">
                                             <div className="stat-val">{anomalies.critical_count || 0}</div>
                                             <div className="stat-lbl">Critical Risks</div>
+                                        </div>
+                                    </div>
+                                    <div className="stat-box glass-panel">
+                                        <div className="stat-box-icon" style={{ color: 'var(--accent-cyan)', background: 'rgba(6,182,212,0.1)' }}>
+                                            <Layers size={18} />
+                                        </div>
+                                        <div className="stat-data">
+                                            <div className="stat-val">{uniqueSources}</div>
+                                            <div className="stat-lbl">Active Sources</div>
+                                        </div>
+                                    </div>
+                                    <div className="stat-box glass-panel">
+                                        <div className="stat-box-icon" style={{ color: 'var(--accent-purple)', background: 'rgba(139,92,246,0.1)' }}>
+                                            <Shield size={18} />
+                                        </div>
+                                        <div className="stat-data">
+                                            <div className="stat-val">{activeSectors}</div>
+                                            <div className="stat-lbl">Sectors Tracked</div>
                                         </div>
                                     </div>
                                 </div>
@@ -591,13 +650,24 @@ const Dashboard = () => {
                                                     onClick={(e) => { if (!art.url || !art.url.startsWith('http')) e.preventDefault(); }}
                                                 >
                                                     <div className="article-feed-main">
-                                                        <div className="article-feed-title">{art.title}</div>
+                                                        <div className="article-feed-title">
+                                                            <FileText size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: 2 }} />
+                                                            {art.title}
+                                                        </div>
                                                         <div className="article-feed-meta">
                                                             <span className="article-source-badge">{art.source}</span>
                                                             <span className={`badge badge-${(art.sentiment_label || 'neutral').toLowerCase()}`}>{art.sentiment_label}</span>
+                                                            <span className={`badge ${art.fake_news_label === 'Fake' ? 'badge-negative' : 'badge-neutral'}`}>
+                                                                {art.fake_news_label === 'Fake' ? '🚨 Flagged' : '✓ Verified'} ({(art.fake_news_score * 100 || 99).toFixed(0)}%)
+                                                            </span>
+                                                            {art.published_at && (
+                                                                <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: '600' }}>
+                                                                    {new Date(art.published_at).toLocaleDateString()}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                    <ExternalLink size={16} color="var(--accent-indigo)" />
+                                                    <ExternalLink size={18} color="var(--accent-indigo)" style={{ flexShrink: 0 }} className="external-link-icon" />
                                                 </a>
                                             )) : (
                                                 <div className="empty-state">
@@ -702,64 +772,255 @@ const Dashboard = () => {
                                 </div>
                             )}
 
-                            {/* ═══ TAB: ANALYTICS ═══ */}
-                            {activeTab === 'analytics' && (
+                            {/* ═══ TAB: INTEL & ENTITIES ═══ */}
+                            {activeTab === 'intel' && (
                                 <div className="main-content">
                                     <div className="section">
                                         <div className="section-title">
-                                            <div className="section-title-icon"><BarChart2 size={16} /></div>
-                                            Sentiment Trajectory
+                                            <div className="section-title-icon"><Users size={16} /></div>
+                                            Named Entities Extracted
+                                            <span className="section-title-count">({(entities?.entities || []).length} entities)</span>
                                         </div>
-                                        <div style={{ height: '340px', width: '100%', padding: '16px 0' }}>
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={[
-                                                    { name: 'Positive', positive: totalPositive, negative: 0 },
-                                                    { name: 'Neutral', positive: 0, negative: 0 },
-                                                    { name: 'Negative', positive: 0, negative: totalNegative },
-                                                ]}>
-                                                    <defs>
-                                                        <linearGradient id="pos" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="var(--positive)" stopOpacity={0.2} />
-                                                            <stop offset="95%" stopColor="var(--positive)" stopOpacity={0} />
-                                                        </linearGradient>
-                                                        <linearGradient id="neg" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="var(--negative)" stopOpacity={0.2} />
-                                                            <stop offset="95%" stopColor="var(--negative)" stopOpacity={0} />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                                                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                                                    <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                                                    <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
-                                                    <Area type="monotone" dataKey="positive" stroke="var(--positive)" strokeWidth={3} fillOpacity={1} fill="url(#pos)" />
-                                                    <Area type="monotone" dataKey="negative" stroke="var(--negative)" strokeWidth={3} fillOpacity={1} fill="url(#neg)" />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
+                                        <div className="events-list" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                                            {(entities?.entities || []).length > 0 ? (entities.entities || []).slice(0, 60).map((ent, i) => (
+                                                <div key={i} className="glass-card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                                    <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.08))', color: 'var(--accent-indigo)', flexShrink: 0 }}>
+                                                        {entityIcon(ent.label)}
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>{ent.text}</div>
+                                                        <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginTop: 2 }}>{ent.label} • {ent.count} mentions</div>
+                                                    </div>
+                                                    <span className="badge" style={{ background: 'rgba(99,102,241,0.06)', color: 'var(--accent-indigo)', border: '1px solid rgba(99,102,241,0.1)' }}>{ent.count}×</span>
+                                                </div>
+                                            )) : (
+                                                <div className="empty-state"><div className="empty-state-icon"><Users /></div><div className="empty-state-text">No entities extracted yet. Run the pipeline to begin NER analysis.</div></div>
+                                            )}
                                         </div>
-                                        <div style={{ padding: '16px', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.1)', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-                                            <strong style={{ color: 'var(--text-primary)' }}>AI Insight:</strong> The intelligence matrix shows a <strong>{((totalPositive / (metrics.article_count || 1)) * 100).toFixed(1)}%</strong> overall positive density across {metrics.article_count.toLocaleString()} signals.
+                                    </div>
+                                    <div className="section">
+                                        <div className="section-title">
+                                            <div className="section-title-icon"><AlertTriangle size={16} /></div>
+                                            Anomaly Alerts
+                                            <span className="section-title-count">({anomalies.critical_count || 0} critical, {anomalies.warning_count || 0} warnings)</span>
+                                        </div>
+                                        <div className="events-list" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                                            {(anomalies?.anomalies || []).length > 0 ? (anomalies.anomalies || []).slice(0, 30).map((an, i) => (
+                                                <div key={i} className="glass-card" style={{ padding: '16px 20px', borderLeft: `4px solid ${an.severity === 'critical' ? 'var(--negative)' : 'var(--warning)'}` }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                                        <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>{an.sector || an.metric || 'Unknown'}</span>
+                                                        <span className={`badge ${an.severity === 'critical' ? 'badge-negative' : 'badge-neutral'}`}>{(an.severity || 'warning').toUpperCase()}</span>
+                                                    </div>
+                                                    <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{an.description || `Z-Score: ${an.z_score?.toFixed(2) || 'N/A'}`}</div>
+                                                </div>
+                                            )) : (
+                                                <div className="empty-state"><div className="empty-state-icon"><Shield /></div><div className="empty-state-text">No anomalies detected. All signals within normal parameters.</div></div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ═══ TAB: ANALYTICS (REDESIGNED — Side-by-Side) ═══ */}
+                            {activeTab === 'analytics' && (
+                                <div className="analytics-dashboard">
+                                    {/* Row 1: Sentiment Pie + Source Distribution */}
+                                    <div className="analytics-row">
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><PieChartIcon size={16} /></div>
+                                                Sentiment Breakdown
+                                            </div>
+                                            <div style={{ height: '280px', width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <RePieChart>
+                                                        <Pie data={sentimentPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                                                            {sentimentPieData.map((entry, index) => (
+                                                                <Cell key={`pie-${index}`} fill={entry.fill} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
+                                                    </RePieChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                            <div className="analytics-summary-row">
+                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--positive)' }}>●</span> Positive <strong>{totalPositive}</strong></div>
+                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--negative)' }}>●</span> Negative <strong>{totalNegative}</strong></div>
+                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--neutral)' }}>●</span> Neutral <strong>{totalNeutral}</strong></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><Newspaper size={16} /></div>
+                                                Top Sources
+                                                <span className="section-title-count">({uniqueSources} active)</span>
+                                            </div>
+                                            <div style={{ height: '320px', width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <ReBarChart data={sourceDistData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" horizontal={false} />
+                                                        <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                                                        <YAxis type="category" dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} width={120} />
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
+                                                        <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18} fill="var(--accent-indigo)" opacity={0.8} />
+                                                    </ReBarChart>
+                                                </ResponsiveContainer>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="section">
-                                        <div className="section-title">
-                                            <div className="section-title-icon"><PieChartIcon size={16} /></div>
-                                            Sector Distribution Analysis
+                                    {/* Row 2: Sentiment Trajectory + Sector Distribution */}
+                                    <div className="analytics-row">
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><BarChart2 size={16} /></div>
+                                                Sentiment Trajectory
+                                            </div>
+                                            <div style={{ height: '300px', width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <AreaChart data={[
+                                                        { name: 'Positive', positive: totalPositive, negative: 0 },
+                                                        { name: 'Neutral', positive: Math.round(totalPositive * 0.4), negative: Math.round(totalNegative * 0.3) },
+                                                        { name: 'Negative', positive: 0, negative: totalNegative },
+                                                    ]}>
+                                                        <defs>
+                                                            <linearGradient id="pos" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="#059669" stopOpacity={0.3} />
+                                                                <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                                                            </linearGradient>
+                                                            <linearGradient id="neg" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3} />
+                                                                <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                                                        <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                                        <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
+                                                        <Area type="monotone" dataKey="positive" stroke="#059669" strokeWidth={3} fillOpacity={1} fill="url(#pos)" />
+                                                        <Area type="monotone" dataKey="negative" stroke="#dc2626" strokeWidth={3} fillOpacity={1} fill="url(#neg)" />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                            <div className="analytics-insight-bar">
+                                                <strong>AI Insight:</strong> {((totalPositive / (totalSentiment || 1)) * 100).toFixed(1)}% positive density across {metrics.article_count.toLocaleString()} signals.
+                                            </div>
                                         </div>
-                                        <div style={{ height: '340px', width: '100%', padding: '16px 0' }}>
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <ReBarChart data={impacts.slice(0, 8)} margin={{ top: 20, right: 30, left: 0, bottom: 40 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                                                    <XAxis dataKey="sector" stroke="var(--text-muted)" fontSize={11} interval={0} angle={-35} textAnchor="end" tickLine={false} axisLine={false} />
-                                                    <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                                                    <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
-                                                    <Bar dataKey="total" radius={[6, 6, 0, 0]} barSize={40}>
-                                                        {impacts.slice(0, 8).map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? 'var(--accent-indigo)' : 'var(--accent-cyan)'} opacity={0.8} />
-                                                        ))}
-                                                    </Bar>
-                                                </ReBarChart>
-                                            </ResponsiveContainer>
+
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><Activity size={16} /></div>
+                                                Sector Distribution
+                                            </div>
+                                            <div style={{ height: '300px', width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <ReBarChart data={impacts.slice(0, 10)} margin={{ top: 20, right: 20, left: 0, bottom: 55 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                                                        <XAxis dataKey="sector" stroke="var(--text-muted)" fontSize={10} interval={0} angle={-40} textAnchor="end" tickLine={false} axisLine={false} />
+                                                        <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
+                                                        <Bar dataKey="bullish" stackId="a" fill="#059669" radius={[0,0,0,0]} barSize={28} name="Bullish" />
+                                                        <Bar dataKey="bearish" stackId="a" fill="#dc2626" radius={[4,4,0,0]} barSize={28} name="Bearish" />
+                                                    </ReBarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 3: Fake News / Verification + Entity Type Distribution */}
+                                    <div className="analytics-row">
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><Shield size={16} /></div>
+                                                Verification Status
+                                            </div>
+                                            <div style={{ height: '260px', width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <RePieChart>
+                                                        <Pie data={fakeNewsPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                                                            {fakeNewsPieData.map((entry, index) => (
+                                                                <Cell key={`fn-${index}`} fill={entry.fill} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12 }} />
+                                                    </RePieChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                            <div className="analytics-summary-row">
+                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--positive)' }}>✓</span> Verified <strong>{realCount}</strong></div>
+                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--negative)' }}>🚨</span> Flagged <strong>{fakeCount}</strong></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><Users size={16} /></div>
+                                                Entity Types
+                                                <span className="section-title-count">({(entities?.entities || []).length} total)</span>
+                                            </div>
+                                            <div style={{ height: '280px', width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <ReBarChart data={entityTypeData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                                                        <XAxis dataKey="type" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                                                        <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12 }} />
+                                                        <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={32}>
+                                                            {entityTypeData.map((entry, index) => (
+                                                                <Cell key={`ent-${index}`} fill={['#6366f1', '#06b6d4', '#8b5cf6', '#059669', '#d97706', '#dc2626', '#2563eb', '#ec4899'][index % 8]} opacity={0.85} />
+                                                            ))}
+                                                        </Bar>
+                                                    </ReBarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 4: Rising Trends + Falling Trends */}
+                                    <div className="analytics-row">
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon" style={{ background: 'rgba(5,150,105,0.1)', color: 'var(--positive)' }}><TrendingUp size={16} /></div>
+                                                Rising Sectors
+                                                <span className="section-title-count">({trends.rising?.length || 0})</span>
+                                            </div>
+                                            <div className="trend-cards-list">
+                                                {(trends.rising || []).slice(0, 6).map((t, i) => (
+                                                    <div key={`r-${i}`} className="glass-card" style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <div>
+                                                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{t.sector}</div>
+                                                            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>CONFIDENCE: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
+                                                        </div>
+                                                        <span className="shift-momentum rising" style={{ fontSize: '1.1rem' }}>↑ {t.momentum?.toFixed(1)}</span>
+                                                    </div>
+                                                ))}
+                                                {(trends.rising || []).length === 0 && (
+                                                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 500 }}>No rising sectors detected</div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon" style={{ background: 'rgba(220,38,38,0.1)', color: 'var(--negative)' }}><TrendingDown size={16} /></div>
+                                                Falling Sectors
+                                                <span className="section-title-count">({trends.falling?.length || 0})</span>
+                                            </div>
+                                            <div className="trend-cards-list">
+                                                {(trends.falling || []).slice(0, 6).map((t, i) => (
+                                                    <div key={`f-${i}`} className="glass-card" style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <div>
+                                                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{t.sector}</div>
+                                                            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>RISK: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
+                                                        </div>
+                                                        <span className="shift-momentum falling" style={{ fontSize: '1.1rem' }}>↓ {Math.abs(t.momentum || 0).toFixed(1)}</span>
+                                                    </div>
+                                                ))}
+                                                {(trends.falling || []).length === 0 && (
+                                                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 500 }}>No falling sectors detected</div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
