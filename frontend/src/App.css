@@ -127,10 +127,7 @@ body {
     font-family: 'Syne', sans-serif;
     font-size: 1.5rem; font-weight: 800;
     letter-spacing: -0.04em; line-height: 1.1;
-    background: linear-gradient(135deg, #1e293b, #3b82f6, #8b5cf6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-primary);
     text-transform: uppercase;
 }
 .oracle-subtitle {
@@ -705,10 +702,7 @@ body {
     font-size: 2.4rem;
     font-weight: 800;
     letter-spacing: 0.15em;
-    background: linear-gradient(to right, #10b981, #3b82f6, #a855f7);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #f8fafc;
     animation: textBreathe 2s ease-in-out infinite;
     text-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
 }

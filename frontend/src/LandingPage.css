@@ -53,10 +53,7 @@
 .logo-name {
     font-family: 'Syne', sans-serif;
     font-size: 1.5rem; font-weight: 800; letter-spacing: -0.04em; text-transform: uppercase;
-    background: linear-gradient(135deg, #1e293b, #3b82f6, #8b5cf6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--lp-text-primary);
 }
 .lp-nav-links { display: flex; align-items: center; gap: 2rem; }
 .lp-nav-links a { color: var(--lp-text-muted); font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: color 0.3s; position: relative; }
