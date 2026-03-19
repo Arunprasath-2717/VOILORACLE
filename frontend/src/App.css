@@ -124,9 +124,9 @@ body {
 
 .title-container { display: flex; flex-direction: column; gap: 2px; text-decoration: none; }
 .oracle-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.5rem; font-weight: 800;
-    letter-spacing: -0.04em; line-height: 1.1;
+    font-family: 'Righteous', 'Syne', sans-serif;
+    font-size: 1.6rem; font-weight: 400;
+    letter-spacing: 0.05em; line-height: 1.1;
     color: var(--text-primary);
     text-transform: uppercase;
 }
@@ -698,10 +698,10 @@ body {
 
 /* Typography Overrides for #1 */
 .loading-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 2.4rem;
-    font-weight: 800;
-    letter-spacing: 0.15em;
+    font-family: 'Righteous', 'Syne', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
     color: #f8fafc;
     animation: textBreathe 2s ease-in-out infinite;
     text-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
