@@ -1,188 +1,447 @@
-# 🔮 VEILORACLE — AI-Powered Global Intelligence Network
+<p align="center">
+  <img src="frontend/src/Logo.jpeg" alt="VEILORACLE Logo" width="120" />
+</p>
 
-> Real-time news intelligence across **ALL** global sectors — finance, technology, sports, entertainment, science, defense, healthcare, environment, education, agriculture, fashion, legal, and more — powered by an **Advanced 13-Engine AI Pipeline**.
+<h1 align="center">🔮 VEILORACLE — AI-Powered Real-Time Global Intelligence Network</h1>
+
+<p align="center">
+  <strong>Enterprise-Grade NLP Pipeline</strong> · <strong>13 AI Engines</strong> · <strong>8 Data Sources</strong> · <strong>3000+ Sectors</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/react-18.2-61DAFB?style=flat-square&logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/fastapi-0.109-009688?style=flat-square&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/pytorch-2.1-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" />
+  <img src="https://img.shields.io/badge/huggingface-transformers-FFD21E?style=flat-square&logo=huggingface&logoColor=black" />
+  <img src="https://img.shields.io/badge/vite-5.1-646CFF?style=flat-square&logo=vite&logoColor=white" />
+</p>
 
 ---
 
-## 🚀 Overview & Architecture (v2.0)
-The VEILORACLE system is an enterprise-grade NLP pipeline that continuously streams, processes, and analyzes global news and events in real-time. It completely bypasses basic integrations in favor of fully local, highly accurate **Hugging Face Transformers** combined with multi-source global API aggregations.
+## 📋 Table of Contents
 
-### Core Architecture Components:
-- **Streaming Pipeline Engine**: Designed to asynchronously pull global data and route it through 13 separate AI stages, utilizing an optional **Redis Message Queue** (gracefully falling back to memory queues if Redis is unavailable).
-- **Intelligent Database Systems**: Powered by SQLite locally, scalable to **PostgreSQL with JSON/pgvector** embeddings for massive data throughput.
-- **Event Lifecycle Classifier**: Determines whether an event is Emerging, Trending, Peak, or Declining based on exponential time decay calculations.
-- **Deduplication Engine**: Cleans massive data influxes via Cosine Similarity (`> 0.95`).
-- **Source Credibility Subsystem**: Mathematically weights outcomes based on the trusted reputation of news outlets.
+- [Overview](#-overview)
+- [System Architecture](#-system-architecture)
+- [Data Sources & API Integrations](#-data-sources--api-integrations)
+- [The 13 AI Engines](#-the-13-ai-engines)
+- [Tech Stack](#-complete-technology-stack)
+- [Project Structure](#-project-structure)
+- [Sector Coverage](#-global-sector-coverage)
+- [Frontend Dashboard](#-intelligent-dashboard)
+- [Quick Start](#-quick-start-guide)
+- [Environment Variables](#-environment-variables)
+- [CLI Commands](#-cli-commands)
 
 ---
 
-## 📡 Live Global Data Collection (The Workflow)
-VEILORACLE pulls raw, unstructured data from across the globe every few minutes, aggregating thousands of live data streams into a single unified pipeline. 
+## 🚀 Overview
 
-**Data Fetching Sources Include:**
-1. **GNews API**: High velocity, global top headlines.
-2. **WorldNews API**: Geopolitical intelligence and deep regional events.
-3. **TheNews API**: Top international headlines across categories.
-4. **Webz.io API**: Deep web, unstructured news crawling.
-5. **NewsData.io**: Broad diverse news aggregation.
-6. **GDELT Raw Files**: The Global Database of Events, Language, and Tone.
-7. **NewsAPI & RSS Feeds**: Traditional media & robust fallback pipelines.
+VEILORACLE is an **enterprise-grade, real-time global news intelligence system** that continuously streams, processes, and analyzes world events across every domain — finance, technology, sports, entertainment, science, defense, healthcare, environment, education, agriculture, fashion, legal, and more.
 
-**The Workflow:**
-`Data Collectors` → `Queue Manager` → `NLP Preprocessors` → `AI Event Detection & Deduplication` → `Sentiment Models` → `NER Engines` → `Sector Classifiers` → `Model Routing (LLMs)` → `Transformers (Summarization)` → `Intelligence Scoring` → `Anomaly Detection` → `Trend Forecasting` → `Database` → `React Frontend`
+It combines **8 live data source APIs** with a **13-stage AI pipeline** built on state-of-the-art Hugging Face Transformers, spaCy NER, HDBSCAN clustering, BERTopic discovery, and custom anomaly detection — all served through a **premium React dashboard** with real-time visualizations, semantic search, and glassmorphism aesthetics.
+
+### Key Capabilities
+
+| Capability | Description |
+|---|---|
+| 🌐 **Multi-Source Aggregation** | Pulls from 8 global APIs + 18 RSS feeds simultaneously |
+| 🧠 **13-Engine AI Pipeline** | Sentiment, NER, fake news detection, topic discovery, anomaly detection, trend forecasting |
+| 📊 **Real-Time Analytics** | Interactive donut charts, trajectory maps, entity classification, sector analysis |
+| 🔍 **Semantic Search** | Full-text and vector-based search powered by Supabase |
+| 🎯 **3000+ Sector Classification** | AI-generated sector taxonomy covering every global industry |
+| 🛡️ **Fake News Detection** | RoBERTa-based disinformation classifier |
+| 📈 **Trend Forecasting** | Linear regression models predicting sector momentum |
+| ⚡ **Streaming Architecture** | Redis-backed message queues with in-memory fallback |
+
+---
+
+## 🏗 System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        VEILORACLE INTELLIGENCE PIPELINE                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │                    📡 DATA COLLECTION LAYER                      │       │
+│  │  GNews · NewsData · WorldNews · TheNews · Webz.io               │       │
+│  │  NewsAPI · GDELT · 18 RSS Feeds (BBC, NPR, Al Jazeera, etc.)   │       │
+│  └───────────────────────────┬──────────────────────────────────────┘       │
+│                              ▼                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │                    📨 MESSAGE QUEUE (Redis / Memory)              │       │
+│  └───────────────────────────┬──────────────────────────────────────┘       │
+│                              ▼                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │                    🧠 13-STAGE AI PROCESSING                     │       │
+│  │                                                                   │       │
+│  │  1. NLP Preprocessing ──▶ 2. Fake News Detection                 │       │
+│  │  3. Multilingual NLP ───▶ 4. Event Clustering (HDBSCAN)         │       │
+│  │  5. Sentiment (RoBERTa) ▶ 6. Named Entity Recognition          │       │
+│  │  7. Sector Classification ▶ 8. LLM Model Routing               │       │
+│  │  9. Abstractive Summary ─▶ 10. Impact Prediction                │       │
+│  │  11. Intelligence Score ─▶ 12. Anomaly Detection                │       │
+│  │  13. Trend Forecasting                                           │       │
+│  └───────────────────────────┬──────────────────────────────────────┘       │
+│                              ▼                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │                    💾 STORAGE LAYER                               │       │
+│  │  SQLite (local) · PostgreSQL (production) · Supabase (cloud)    │       │
+│  └───────────────────────────┬──────────────────────────────────────┘       │
+│                              ▼                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │                    🖥️ PRESENTATION LAYER                         │       │
+│  │  FastAPI REST + WebSocket ──▶ React 18 + Recharts + Framer      │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Core Architecture Components
+
+| Component | Purpose |
+|---|---|
+| **Streaming Pipeline Engine** | Asynchronously pulls global data through 13 AI stages. Uses Redis message queue with graceful in-memory fallback. |
+| **Intelligent Database Systems** | SQLite locally, scalable to PostgreSQL with JSON/pgvector and Supabase cloud sync. |
+| **Event Lifecycle Classifier** | Categorizes events as Emerging, Trending, Peak, or Declining via exponential time decay. |
+| **Deduplication Engine** | Cosine similarity threshold (>0.95) removes duplicate articles across sources. |
+| **Source Credibility Subsystem** | Weights outcomes based on outlet trust scores (Reuters 0.95, BBC 0.90, Bloomberg 0.92, etc.). |
+
+---
+
+## 📡 Data Sources & API Integrations
+
+VEILORACLE aggregates from **8 distinct API sources** plus an extensive RSS feed network:
+
+| # | Source | Type | What It Provides |
+|---|--------|------|------------------|
+| 1 | **GNews API** | Paid | Top headlines across general, world, business, technology categories (10 articles/category) |
+| 2 | **NewsData.io** | Paid | Latest global news with language filtering, up to 50 articles per call |
+| 3 | **WorldNews API** | Paid | Full-text search with `breaking OR latest` queries, up to 50 results |
+| 4 | **Webz.io** | Paid | News API Lite — broad web crawling for news content |
+| 5 | **NewsAPI** | Freemium | Multi-category headlines (general, tech, business, science, health, sports, entertainment) |
+| 6 | **GDELT** | Free | Global Event Database — real-time global event monitoring (capped at 25 to prevent feed dominance) |
+| 7 | **RSS Feeds** | Free | 18+ enterprise feeds: Reuters, BBC, NPR, Guardian, TechCrunch, Verge, WSJ + regional coverage |
+
+### Collection Pipeline
+```
+All 8 Sources → Deduplication (title similarity) → Source Breakdown Report → Queue Manager
+```
+
+After every collection cycle, a detailed **source breakdown report** is logged showing exactly how many articles each source contributed.
+
+---
+
+## 🧠 The 13 AI Engines
+
+| # | Engine | Model / Technology | Purpose |
+|---|--------|--------------------|---------|
+| 1 | **Vector Embeddings** | `BAAI/bge-small-en-v1.5` | Converts text to 384-dimensional dense vectors for semantic similarity |
+| 2 | **Dynamic Clustering** | `HDBSCAN` | Density-based event grouping — no predetermined cluster count needed |
+| 3 | **Sentiment Analysis** | `cardiffnlp/twitter-roberta-base-sentiment` | Fine-tuned RoBERTa model for Positive / Negative / Neutral classification |
+| 4 | **Fake News Detection** | `roberta-base-openai-detector` | Disinformation and AI-generated text detection |
+| 5 | **Multilingual NLP** | `facebook/xlm-roberta-base` | Zero-shot cross-lingual language detection and mapping |
+| 6 | **Topic Discovery** | `BERTopic` | Automatic hidden theme extraction using transformer embeddings + UMAP |
+| 7 | **Sector AI Routing** | Custom Keyword Mapping | Routes articles to 3000+ sectors using weighted keyword matching |
+| 8 | **AI Summarization** | `google/pegasus-xsum` | Abstractive, human-quality event summaries |
+| 9 | **Entity Extraction** | `spaCy` (`en_core_web_sm`) | Named Entity Recognition — PERSON, ORG, GPE, LOC, DATE, MONEY |
+| 10 | **Anomaly Detection** | Custom Z-Score Engine | Flags volume spikes and sentiment shift anomalies (Critical / Warning / Normal) |
+| 11 | **Trend Forecasting** | Linear Regression | Predicts future sentiment trajectories and sector momentum |
+| 12 | **Impact Prediction** | Sector Mapping Vectors | Matches articles against 3000 sectors with confidence scoring |
+| 13 | **Intelligence Scoring** | Time-Decay (Half-Life) | Calculates event importance using exponential decay and source credibility weighting |
+
+### Sector-Specific LLM Routing
+
+For deeper analysis, articles are routed to **domain-specialized large language models**:
+
+| Sector | Model |
+|--------|-------|
+| Finance | `ProsusAI/finbert` |
+| Technology | `Qwen/Qwen2-7B-Instruct` |
+| Politics | `mistralai/Mistral-7B-Instruct-v0.3` |
+| Business | `deepseek-ai/deepseek-llm-7b-chat` |
+| Healthcare | `microsoft/BioGPT-Large` |
+| General | `meta-llama/Llama-3-8B-Instruct` |
 
 ---
 
 ## 🛠 Complete Technology Stack
 
-### Backend
-- **Python 3.10+**: Core backend scripting and AI pipeline construction.
-- **FastAPI**: Asynchronous API endpoints serving real-time AI outputs to the frontend.
-- **Uvicorn**: Lightning-fast ASGI web server.
-- **Redis**: Streaming message queues for high-velocity intelligence throughput.
-- **SQLite / PostgreSQL (pgvector)**: Relational & Vector-based database storage.
-- **SQLAlchemy & Databases (async module)**: System database interaction.
-- **ThreadPoolExecutor / multi-threading**: Concurrent background scraping.
-- **Requests & Feedparser**: Robust API and RSS retrievers.
+### Backend (Python)
 
-### Frontend
-- **React.js (Vite)**: Lightning fast, reactive frontend UI.
-- **React Three Fiber & Drei**: 3D Neural visualizations and dynamic particle spheres.
-- **Recharts**: Advanced data visualization, trend graphs, and sentiment distributions.
-- **Vanilla CSS (Glassmorphism)**: Premium dark themes, micro-animations, and dynamic visual styling.
-- **Framer Motion**: Smooth component transitions and UI animations.
+| Technology | Version | Role |
+|------------|---------|------|
+| **Python** | 3.10+ | Core backend language |
+| **FastAPI** | ≥0.109 | Asynchronous REST API + WebSocket endpoints |
+| **Uvicorn** | ≥0.27 | ASGI web server |
+| **PyTorch** | ≥2.1 | Deep learning framework for transformer models |
+| **Hugging Face Transformers** | ≥4.36 | Pre-trained NLP model loading and inference |
+| **Sentence-Transformers** | ≥2.3 | Embedding generation (BGE-small-en) |
+| **spaCy** | ≥3.7 | Named Entity Recognition |
+| **HDBSCAN** | ≥0.8 | Density-based clustering |
+| **BERTopic** | ≥0.15 | Neural topic modeling |
+| **scikit-learn** | ≥1.4 | ML utilities, cosine similarity, regression |
+| **NLTK** | ≥3.8 | Text tokenization and preprocessing |
+| **Pandas** | ≥2.2 | Data manipulation and analysis |
+| **NumPy** | ≥1.26 | Numerical computing |
+| **Requests** | ≥2.31 | HTTP API client |
+| **Feedparser** | ≥6.0 | RSS/Atom feed parsing |
+| **newsapi-python** | ≥0.2.7 | NewsAPI SDK |
+| **python-dotenv** | ≥1.0 | Environment variable management |
+| **Redis** | Optional | Streaming message queue (in-memory fallback) |
+| **SQLite** | Built-in | Local database storage |
+| **Websockets** | ≥11.0 | Real-time status updates |
+| **Matplotlib / Seaborn / Plotly** | Various | Data visualization (server-side) |
+| **pytest** | ≥7.4 | Testing framework |
+
+### Frontend (React)
+
+| Technology | Version | Role |
+|------------|---------|------|
+| **React** | 18.2 | Core UI library |
+| **Vite** | 5.1 | Lightning-fast build tool & dev server |
+| **React Router DOM** | 7.13 | Client-side routing (Landing → Dashboard) |
+| **Recharts** | 3.7 | Data visualization — Pie, Bar, Area charts with custom gradients |
+| **Framer Motion** | 12.36 | Smooth animations and page transitions |
+| **Lucide React** | 0.344 | Premium SVG icon library |
+| **React Hot Toast** | 2.6 | Notification system |
+| **@supabase/supabase-js** | 2.99 | Cloud database queries and semantic search |
+| **Three.js** | 0.183 | 3D rendering engine |
+| **React Three Fiber** | 8.17 | React renderer for Three.js |
+| **React Three Drei** | 9.122 | Three.js helpers and abstractions |
+| **Globe.gl / React Globe** | 2.45 / 2.27 | 3D globe visualizations |
+| **Spline Runtime** | 1.12 | 3D scene integration |
+| **Vanilla CSS** | — | Glassmorphism, micro-animations, light SaaS theme |
+
+### Infrastructure & DevOps
+
+| Technology | Role |
+|------------|------|
+| **Docker Compose** | Container orchestration (Redis + PostgreSQL) |
+| **Supabase** | Cloud PostgreSQL database with real-time subscriptions |
+| **Redis** | Message queue for pipeline streaming |
+| **Git** | Version control |
+| **VS Code** | Development environment |
 
 ---
 
-## 🧠 Cutting-Edge AI Technologies Used (The 13 Engines)
+## 📁 Project Structure
 
-| # | AI Engine / Module | Technology / Model Used | Purpose within Pipeline |
-|---|-----------|---------|---------|
-| 1 | **Vector Embeddings** | `BAAI/bge-small-en-v1.5` | Converts text into 384-dimensional dense vectors for semantic similarity mapping. |
-| 2 | **Dynamic Clustering** | `hdbscan` | Highly accurate, density-based event grouping. Identifies clusters of related global news. |
-| 3 | **Sentiment Analysis** | `cardiffnlp/twitter-roberta-base-sentiment` | State-of-the-art RoBERTa model for nuanced Positive/Negative/Neutral classifications. |
-| 4 | **Fake News Detection** | `roberta-base-openai-detector` | Natively flags suspected disinformation and propaganda in real-time. |
-| 5 | **Multilingual Engine** | `facebook/xlm-roberta-base` | Zero-shot cross-lingual analysis mapping foreign texts into contextual English embeddings. |
-| 6 | **Topic Discovery** | `BERTopic` | Automatically extracts hidden, overarching themes spanning global data streams dynamically. |
-| 7 | **Sector AI Routing** | `FinBERT`, `Qwen2`, `Mistral`, `Llama-3`, `BioGPT` | Intelligent semantic routing. It pipelines queries to specialized LLMs based on their sector. |
-| 8 | **AI Summarization** | `google/pegasus-xsum` | Generates highly abstractive, human-quality summaries out of large event clusters. |
-| 9 | **Entity Extraction** | `spaCy` (`en_core_web_sm`) | Extracts people, organizations, locations, and monetary values (NER). |
-| 10| **Anomaly Detection** | Custom Z-Score Mathematics | Detects unusual volume spikes and sentiment velocity shifts. |
-| 11| **Trend Forecasting** | Linear Regression | Predicts future sentiment trajectories per sector. |
-| 12| **Impact Prediction** | Sector Mapping | Maps articles against 3000 distinct sectors to predict global directionality. |
-| 13| **Intelligence Scoring**| Time-Decay Math Methods | Uses half-life calculations, credibility multipliers, and cluster density formulas to rank events. |
-
----
-
-## 📁 Full Project Structure 
-
-```text
+```
 VEILORACLE EE Project/
-├── backend/
-│   ├── api.py              # FastAPI real-time endpoints 
-│   ├── pipeline.py         # 13-step Async Streaming AI pipeline orchestrator
-│   ├── queue_manager.py    # Redis/Memory streaming queue layer
-│   ├── database.py         # SQLite / PostgreSQL Vector storage layer
-│   ├── collector.py        # Vast news collection engines (GNews, Webz.io, etc)
-│   ├── config.py           # Keys, definitions, & 3000 mapped sectors
-│   ├── preprocessor.py     # Initial NLP text pre-processing
-│   ├── detector.py         # AI: HDBSCAN Event Clustering, Deduplication, & Lifecycle
-│   ├── sentiment.py        # AI: RoBERTa Sentiment Analysis
-│   ├── ner_engine.py       # AI: spaCy named entity recognition
-│   ├── fake_news.py        # AI: RoBERTa Disinformation / Fake News detection
-│   ├── multilingual.py     # AI: XLM-RoBERTa cross-lingual context mapping
-│   ├── topic_discovery.py  # AI: BERTopic dynamic cluster discovery 
-│   ├── summarizer.py       # AI: PEGASUS Abstractive Summarization
-│   ├── predictor.py        # AI: Sector impact predictions & modeling
-│   ├── trend_engine.py     # AI: Linear regression trend forecasting algorithms
-│   ├── anomaly_engine.py   # AI: Z-score velocity anomaly detection
-│   ├── sector_router.py    # Routing text queries directly into their related sectors
-│   └── model_router.py     # Pipelines sector texts to matching custom Hugging Face LLMs
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx         # Highly reactive 6-tabbed visual component application
-│   │   ├── components/     # Pre-rendered interface sub-systems
-│   │   ├── App.css         # Premium glassmorphism & dynamic design layers
-│   │   └── index.css       # Core variable design tokens
-│   └── index.html          # Standard HTML entry point
-├── main.py                 # Core CLI entry point (Run pipeline, server, or UI)
-├── docker-compose.yml      # Enterprise deployment stack configs (Postgres + Redis)
-├── requirements.txt        # Large Python Dependency requirements
-└── .env                    # System API configurations (News, Hugging Face, etc)
+├── main.py                    # CLI entry point (pipeline | server | frontend)
+├── requirements.txt           # Python dependencies (24 packages)
+├── docker-compose.yml         # Redis + PostgreSQL containers
+├── .env                       # API keys & credentials
+│
+├── backend/                   # Python backend (22 modules)
+│   ├── __init__.py            # Package initializer
+│   ├── api.py                 # FastAPI REST + WebSocket endpoints
+│   ├── pipeline.py            # 13-step streaming AI pipeline orchestrator
+│   ├── queue_manager.py       # Redis / in-memory message queue
+│   ├── database.py            # SQLite / PostgreSQL / Supabase storage
+│   ├── collector.py           # Multi-source news aggregation (8 APIs)
+│   ├── config.py              # API keys, sector maps, 3000 sector generator
+│   ├── preprocessor.py        # NLP text cleaning & normalization
+│   ├── detector.py            # HDBSCAN event clustering + deduplication
+│   ├── sentiment.py           # RoBERTa sentiment analysis
+│   ├── ner_engine.py          # spaCy named entity recognition
+│   ├── fake_news.py           # RoBERTa fake news / AI-text detection
+│   ├── multilingual.py        # XLM-RoBERTa language detection
+│   ├── topic_discovery.py     # BERTopic dynamic theme extraction
+│   ├── summarizer.py          # Pegasus abstractive summarization
+│   ├── anomaly_engine.py      # Z-score anomaly detection
+│   ├── trend_engine.py        # Linear regression trend forecasting
+│   ├── predictor.py           # Sector impact prediction
+│   ├── intelligence.py        # Importance & risk scoring (time-decay)
+│   ├── sector_router.py       # Keyword-based sector classification
+│   ├── model_router.py        # LLM routing (FinBERT/Qwen/Mistral/etc.)
+│   ├── supabase_client.py     # Supabase connection manager
+│   └── supabase_manager.py    # Cloud sync orchestrator
+│
+├── frontend/                  # React 18 + Vite frontend
+│   ├── package.json           # Node dependencies (16 packages)
+│   ├── vite.config.js         # Vite build configuration
+│   ├── index.html             # HTML entry point
+│   └── src/
+│       ├── main.jsx           # React DOM root
+│       ├── App.jsx            # 6-tab intelligence dashboard (~1050 lines)
+│       ├── App.css            # Dashboard styling (glassmorphism + animations)
+│       ├── LandingPage.jsx    # Immersive marketing landing page
+│       ├── LandingPage.css    # Landing page premium styling
+│       ├── supabaseClient.js  # Frontend Supabase connection
+│       ├── Logo.jpeg          # Brand logo
+│       └── index.css          # CSS variable design tokens
+│
+├── data/                      # SQLite database storage
+├── tests/                     # Test suite
+└── tmp/                       # Temporary / diagnostic scripts
 ```
 
 ---
 
 ## 🌐 Global Sector Coverage
 
-VEILORACLE automatically parses documents and binds them to over **3000+ AI-generated sectors** across every major field of human knowledge:
-- 💰 **Finance & Economy**: Banking, Crypto, Insurance, Venture Capital
-- 💻 **Technology**: Cybersecurity, AI, Cloud Computing, Semiconductors
-- 🏥 **Healthcare & Bio**: Pharma, Medical Devices, Biotech, Mental Health
-- ⚡ **Energy**: Renewables, Nuclear, Oil & Gas, Grid Systems
-- 🏛️ **Politics & Defense**: Diplomacy, Intelligence, Law, Sanctions
-- 🏈 **Sports & Entertainment**: Olympics, Football, Film, Gaming, Music
-- 🔬 **Science & Space**: Physics, Astronomy, Marine Biology
-- 🌍 **Environment**: Climate, Wildlife, Conservation, Clean Energy
-... and thousands more granular categories dynamically tracked.
+VEILORACLE automatically classifies every article into one or more of **3000+ dynamically generated sectors** spanning:
+
+| Domain | Example Sectors |
+|--------|----------------|
+| 💰 **Finance & Economy** | Banking, Cryptocurrency, Insurance, Venture Capital |
+| 💻 **Technology** | Cybersecurity, Artificial Intelligence, Cloud Computing, Semiconductors |
+| 🏥 **Healthcare & Biotech** | Pharmaceuticals, Medical Devices, Biotech, Mental Health |
+| ⚡ **Energy & Environment** | Renewable Energy, Nuclear, Oil & Gas, Climate |
+| 🏛️ **Politics & Governance** | Diplomacy, Defense, Intelligence, Law & Justice |
+| ✈️ **Transport & Logistics** | Aviation, Shipping, Automotive, Railways |
+| 🛒 **Retail & Consumer** | E-Commerce, Consumer Goods, Luxury, Food & Beverage |
+| 🔬 **Science & Space** | Physics, Astronomy, Marine Biology, Space |
+| 📚 **Education** | Higher Education, EdTech, Research, Scholarships |
+| 🎬 **Entertainment & Media** | Film, Music, Gaming, Streaming |
+| 🏈 **Sports** | Football, Cricket, Basketball, Olympics |
+| 🌾 **Agriculture & Food** | Farming, Fisheries, Food Processing, Organic |
+| 🏗️ **Real Estate** | Construction, Architecture, Urban Planning, Housing |
+| 🏭 **Manufacturing** | Robotics, Automation, Textiles, Steel |
+| 📡 **Telecom & Media** | Broadcasting, Publishing, Social Media, Advertising |
+| 🎨 **Arts & Culture** | Fashion, Design, Literature, Heritage |
+| 🚀 **Aerospace & Defense** | Satellites, Drones, Military, Naval |
+| ⛏️ **Mining & Resources** | Rare Earth, Gold, Diamond, Lithium |
+| ⚖️ **Legal & Compliance** | Human Rights, Immigration, Trade Law |
+
+Sectors are generated using a combinatorial algorithm with **base sectors × modifiers × sub-categories**, each mapped to domain-specific keyword pools.
 
 ---
 
-## 🖥️ Extravagant UI/Frontend Features
+## 🖥️ Intelligent Dashboard
 
-- **3D Neural Visualization** — A fully interactive React Three Fiber particle sphere showing active data clusters processing in real-time.
-- **AI Intelligence Briefing** — Immediate real-time global market mood analysis outputs based on current world events.
-- **6 Tabbed Dashboard Views** — Clean UX mapping across `Overview`, `Sectors`, `Events`, `NER Entities`, `AI Trends`, and `Anomalies`.
-- **Global Entity Cloud** — A dynamically animated cloud mapping the people, locations, and organizations most deeply active in the news.
-- **Live Trend Forecasting** — Rising and falling sector predictions accompanied by deep confidence scores.
-- **Anomaly Pulse Alerts** — Automatic critical and warning indicators matching high severity metric scores against standard baselines.
-- **Adaptive Glassmorphism** — Premium dark themes layered with micro-animations and blurred glass visual depths.
+The VEILORACLE dashboard is a **6-tab React application** built with premium SaaS aesthetics:
+
+### Dashboard Tabs
+
+| Tab | Content |
+|-----|---------|
+| **Overview** | Stat boxes (Total Articles, Events, Sources, Sectors), Global Anomaly Radar (Critical Velocity Spikes), live event feed |
+| **Analytics** | Sentiment donut chart, verification donut, source volume bars, entity classification, real-time trajectory map, sector strengths/vulnerabilities |
+| **Sectors** | Sector intelligence grid with momentum indicators, impact direction arrows |
+| **Intel** | Named entities table (PERSON, ORG, GPE), anomaly alerts (Critical/Warning) |
+| **Search** | Supabase-powered full-text search across archived articles |
+| **System** | Live WebSocket system status, pipeline health, model loading states |
+
+### Design Features
+- **Premium SaaS Typography** — Replaced stock fonts with Google's `Syne` and `Outfit`, featuring iridescent text clipping masks.
+- **Glassmorphism** — Frosted glass panels with `backdrop-filter: blur`, subtle glows, and seamless integration.
+- **Micro-Animations** — Floating icons, hover scale/rotate effects, bounce transitions.
+- **Dribbble HUD Loader** — Afro-M inspired pixel-to-pixel cybernetic loader with segmented scanning rings, a glowing neural targeted core, and `JetBrains Mono` system typography.
+- **Responsive Grid** — Side-by-side chart layouts that adapt to any screen size.
+- **Live Data** — Auto-refresh cycle for real-time updates direct from the backend pipeline.
 
 ---
 
 ## 🚀 Quick Start Guide
 
-**1. Install Python Backend Dependencies:**
-```bash
-pip install -r requirements.txt
-```
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- (Optional) Redis for streaming queue
+- (Optional) Docker for Redis + PostgreSQL
 
-**2. Download NLP Reference Core (for Named Entity Extraction):**
+### 1. Clone & Install Backend
 ```bash
+git clone <repository-url>
+cd "VOILORACLE EE Project"
+pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-**3. Configure your API resources:**
-Check `.env` and fill in necessary elements (e.g. `GEMINI_API_KEY`, `GNEWS_API_KEY`, `HF_API_TOKEN`, etc.)
+### 2. Configure Environment
+Create a `.env` file in the project root:
+```env
+# News API Keys (all required for full coverage)
+NEWSAPI_KEY=your_newsapi_key
+NEWSDATA_API_KEY=your_newsdata_key
+GNEWS_API_KEY=your_gnews_key
+WORLDNEWS_API_KEY=your_worldnews_key
+WEBZ_API_KEY=your_webz_key
 
-**4. Start background Database/Queue Systems (Optional but recommended):**
-```bash
-docker-compose up -d
+# AI Model API
+GEMINI_API_KEY=your_gemini_key
+
+# Supabase (optional — for cloud search)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
-*(If skipped, VEILORACLE simply falls back to standard SQLite databases and memory-based array queues).*
 
-**5. Install UI Frontend Dependencies:**
+### 3. Install Frontend
 ```bash
 cd frontend
 npm install
 cd ..
 ```
 
-**6. Spin up the entire VEILORACLE System:**
+### 4. Run the System
+Open **three separate terminals**:
 
-Option A: Run the streaming intelligence AI pipeline continuously in the background (CLI 1)
 ```bash
+# Terminal 1: AI Pipeline (continuous)
 python main.py pipeline --loop
-```
 
-Option B: Start the backend FastAPI data server (CLI 2)
-```bash
+# Terminal 2: Backend API Server (port 8000)
 python main.py server
+
+# Terminal 3: Frontend Dev Server (port 5173)
+cd frontend && npm run dev
 ```
 
-Option C: Bring the React interface to life (CLI 3)
-```bash
-python main.py frontend
-```
+### 5. Open Dashboard
+Navigate to **http://localhost:5173/** in your browser.
 
-*Open your local browser to `http://localhost:5173/` to view the running orchestration!*
+---
+
+## 🔐 Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEWSAPI_KEY` | Yes | NewsAPI.org API key |
+| `NEWSDATA_API_KEY` | Yes | NewsData.io API key |
+| `GNEWS_API_KEY` | Yes | GNews.io API key |
+| `WORLDNEWS_API_KEY` | Yes | WorldNewsAPI.com API key |
+| `WEBZ_API_KEY` | Yes | Webz.io API token |
+| `GEMINI_API_KEY` | Optional | Google Gemini for advanced analysis |
+| `HF_API_TOKEN` | Optional | Hugging Face API for large model inference |
+| `SUPABASE_URL` | Optional | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Optional | Supabase anonymous key |
+| `DATABASE_URL` | Optional | PostgreSQL connection string |
+| `REDIS_URL` | Optional | Redis connection string (default: `redis://localhost:6379/0`) |
+
+---
+
+## ⌨️ CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `python main.py pipeline` | Run the 13-stage AI pipeline once (one-shot) |
+| `python main.py pipeline --loop` | Run the pipeline continuously (every 180 seconds) |
+| `python main.py server` | Start FastAPI backend on `http://localhost:8000` |
+| `python main.py frontend` | Start React frontend on `http://localhost:5173` |
+
+---
+
+## 📊 API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/status` | GET | System health & pipeline status |
+| `/api/metrics` | GET | Dashboard metrics (article count, sentiment, sources) |
+| `/api/events` | GET | Detected events with summaries |
+| `/api/articles` | GET | Processed articles with sentiment & entities |
+| `/api/impacts` | GET | Sector impact predictions |
+| `/api/ai/entities` | GET | Named entity extraction results |
+| `/api/ai/trends` | GET | Sector trend analysis (rising/falling) |
+| `/api/ai/anomalies` | GET | Anomaly detection alerts |
+| `/ws/status` | WebSocket | Real-time system status updates |
+
+---
+
+<p align="center">
+  Built with ❤️ using Python, React, PyTorch, and Hugging Face Transformers
+</p>

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import './LandingPage.css';
 import Globe from 'react-globe.gl';
+import Logo from './Logo.jpeg';
 
 /* ══════════════════════════════════════════════════════════
    DATA
@@ -169,7 +170,7 @@ const LandingPage = () => {
             {/* ═══════ 1. NAVBAR ═══════ */}
             <nav className={`lp-nav ${navScrolled ? 'scrolled' : ''}`}>
                 <div className="lp-nav-logo">
-                    <span className="logo-emoji">🔮</span>
+                    <img src={Logo} alt="VeilOracle Logo" className="logo-img" />
                     <span className="logo-name">VEILORACLE</span>
                 </div>
                 <button className="mobile-toggle" onClick={() => setMobileMenu(!mobileMenu)}>
@@ -182,7 +183,7 @@ const LandingPage = () => {
                     <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="nav-github">
                         <Github size={16} /> GitHub
                     </a>
-                    <Link to="/dashboard" className="lp-nav-cta">
+                    <Link to="/dashboard" className="lp-nav-cta" target="_blank" rel="noopener noreferrer">
                         Launch Intelligence <ChevronRight size={16} />
                     </Link>
                 </div>
@@ -202,7 +203,7 @@ const LandingPage = () => {
                             through a powerful analytics dashboard.
                         </p>
                         <div className="hero-actions">
-                            <Link to="/dashboard" className="hero-btn-primary">
+                            <Link to="/dashboard" className="hero-btn-primary" target="_blank" rel="noopener noreferrer">
                                 Launch Dashboard <ArrowUpRight size={18} />
                             </Link>
                             <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hero-btn-secondary">
@@ -449,7 +450,7 @@ const LandingPage = () => {
                 <div className="cta-container sr">
                     <h2 className="cta-heading">Explore global intelligence<br />in real time</h2>
                     <div className="cta-actions">
-                        <Link to="/dashboard" className="cta-btn-white">
+                        <Link to="/dashboard" className="cta-btn-white" target="_blank" rel="noopener noreferrer">
                             Launch Dashboard <ArrowUpRight size={18} />
                         </Link>
                         <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="cta-btn-outline">
@@ -464,7 +465,7 @@ const LandingPage = () => {
                 <div className="footer-grid">
                     <div className="footer-brand-block">
                         <div className="footer-brand">
-                            <span style={{ fontSize: '1.6rem' }}>🔮</span>
+                            <img src={Logo} alt="VeilOracle Logo" className="logo-img" />
                             <span className="logo-name">VEILORACLE</span>
                         </div>
                         <p className="footer-tagline">AI-Powered Global Intelligence Platform</p>

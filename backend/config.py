@@ -30,7 +30,6 @@ NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "797934e03b33474cb8685d392f0b5335")
 NEWSDATA_API_KEY = os.getenv("NEWSDATA_API_KEY", "pub_c97f479240b7412e9ec56bf9acc953b5")
 GNEWS_API_KEY = os.getenv("GNEWS_API_KEY", "ad0fdcffbdce1cacf14b18dd44260112")
 WORLDNEWS_API_KEY = os.getenv("WORLDNEWS_API_KEY", "a0079caa91044730bcb54dcbbcf6dea5")
-THENEWS_API_KEY = os.getenv("THENEWS_API_KEY", "fkr5gjUCqIEUPVP3fU06Lcf2CU0bxK1hEvoIGBQi")
 WEBZ_API_KEY = os.getenv("WEBZ_API_KEY", "4a6b0b05-34cf-475e-8a77-2de06c3f4750")
 GDELT_API_URL = "https://api.gdeltproject.org/api/v2/doc/doc?query=news&mode=ArtList&maxrecords=100&format=json"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyB3iLyylOu0tLrWbGJqYyeGMcsHtiVCNTk")
@@ -61,40 +60,79 @@ NEWS_COUNTRY = "us"
 # ── RSS Feed URLs (free, unlimited, global multi-domain) ─────────────────────
 # Note: optimized for reliability and speed (removed slow feeds)
 RSS_FEEDS = [
-    # ── Global Headlines (most reliable) ──
+    # ── Global & World Events (Massive Coverage) ──
     "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en",
     "https://feeds.bbci.co.uk/news/rss.xml",
     "https://feeds.bbci.co.uk/news/world/rss.xml",
+    "http://rss.cnn.com/rss/edition.rss",
+    "http://rss.cnn.com/rss/edition_world.rss",
+    "https://www.aljazeera.com/xml/rss/all.xml",
+    "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+    "https://www.reutersagency.com/feed/?best-topics=political-general&type=rx",
+    "https://feeds.npr.org/1001/rss.xml",
+    "https://news.google.com/rss/search?q=reuters&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=asia+news&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=africa+news&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=middle+east+news&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=latin+america+news&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=europe+news&hl=en-GB&gl=GB&ceid=GB:en",
+    "https://www.theguardian.com/world/rss",
+    "https://www.theguardian.com/international/rss",
+    "https://feeds.foxnews.com/foxnews/world",
+
+    # ── India National News (High Volume) ──
+    "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en",
+    "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+    "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms",
+    "https://www.thehindu.com/news/national/feeder/default.rss",
+    "https://feeds.feedburner.com/ndtvnews-top-stories",
+    "https://www.news18.com/rss/india.xml",
+    "https://zeenews.india.com/rss/india-national-news.xml",
+    "https://indianexpress.com/feed/",
+    "https://www.livemint.com/rss/news",
+
+    # ── Tamil Nadu & Regional News (Specifically Requested) ──
+    "https://news.google.com/rss/search?q=tamil+nadu&hl=en-IN&gl=IN&ceid=IN:en",
+    "https://news.google.com/rss/search?q=chennai&hl=en-IN&gl=IN&ceid=IN:en",
+    "https://timesofindia.indiatimes.com/rssfeeds/2950623.cms", # Chennai TOI
+    "https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss", # Hindu TN
+    "https://www.thehindu.com/news/cities/chennai/feeder/default.rss", # Hindu Chennai
+    "https://www.news18.com/rss/tamil-nadu.xml",
+    "https://tamil.oneindia.com/rss/tamil-news-fb.xml", # OneIndia Tamil
+    "https://feeds.bbci.co.uk/tamil/rss.xml", # BBC Tamil
+    "https://news.google.com/rss/search?q=tamil+news&hl=en-IN&gl=IN&ceid=IN:en",
+
     # ── Science & Technology ──
     "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
     "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
+    "https://www.theverge.com/rss/index.xml",
+    "https://www.wired.com/feed/rss",
+    "https://techcrunch.com/feed/",
+    "https://rss.sciencedaily.com/top/science_news.xml",
+
+    # ── Business & Economy ──
+    "https://feeds.bbci.co.uk/news/business/rss.xml",
+    "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+    "https://www.livemint.com/rss/markets",
+    "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+    "https://home.treasury.gov/news/press-releases/rss.xml",
+    "https://finance.yahoo.com/news/rssindex",
+
     # ── Sports (comprehensive) ──
     "https://feeds.bbci.co.uk/sport/rss.xml",
     "https://www.espn.com/espn/rss/news",
-    # ── Business & Economy ──
-    "https://feeds.bbci.co.uk/news/business/rss.xml",
-    # ── Health ──
+    "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms", # TOI Sports India
+    "https://www.thehindu.com/sport/feeder/default.rss",
+    "https://sports.yahoo.com/rss/",
+
+    # ── Health, Entertainment & Politics ──
     "https://feeds.bbci.co.uk/news/health/rss.xml",
-    # ── Entertainment & Arts ──
+    "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml",
     "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
-    # ── Politics & Law ──
     "https://feeds.bbci.co.uk/news/politics/rss.xml",
-    # ── Education ──
-    "https://feeds.bbci.co.uk/news/education/rss.xml",
-    # ── Al Jazeera (International) ──
-    "https://www.aljazeera.com/xml/rss/all.xml",
-    # ── NPR (Multi-domain US) ──
-    "https://feeds.npr.org/1001/rss.xml",
-    # ── Reuters (requires no key) ──
-    "https://news.google.com/rss/search?q=reuters&hl=en-US&gl=US&ceid=US:en",
-    # ── Asia-Pacific coverage ──
-    "https://news.google.com/rss/search?q=asia+news&hl=en-US&gl=US&ceid=US:en",
-    # ── Africa coverage ──
-    "https://news.google.com/rss/search?q=africa+news&hl=en-US&gl=US&ceid=US:en",
-    # ── Middle East coverage ──
-    "https://news.google.com/rss/search?q=middle+east+news&hl=en-US&gl=US&ceid=US:en",
-    # ── Latin America coverage ──
-    "https://news.google.com/rss/search?q=latin+america+news&hl=en-US&gl=US&ceid=US:en",
+    "https://www.thehindu.com/entertainment/feeder/default.rss",
+    "https://variety.com/feed/",
 ]
 
 # ── Artificial Intelligence Models \u0026 Clustering ─────────────────────────────

@@ -2,7 +2,7 @@
    VEILORACLE Dashboard — Light SaaS UI Theme
    Matches the Landing Page styling exactly
    ══════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Unbounded:wght@400;700;900&display=swap');
 
 :root {
     --bg-primary: #f8faff;
@@ -33,6 +33,15 @@
     --font-lg: 1.125rem;
     --font-xl: 1.25rem;
     --font-2xl: 1.5rem;
+}
+
+::selection {
+    background-color: #14b8a6; /* Teal */
+    color: #ffffff;
+}
+::-moz-selection {
+    background-color: #14b8a6; /* Teal */
+    color: #ffffff;
 }
 
 body {
@@ -115,15 +124,20 @@ body {
 
 .title-container { display: flex; flex-direction: column; gap: 2px; text-decoration: none; }
 .oracle-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.4rem; font-weight: 800;
-    letter-spacing: -0.5px; line-height: 1.1;
-    color: var(--text-primary);
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem; font-weight: 800;
+    letter-spacing: -0.04em; line-height: 1.1;
+    background: linear-gradient(135deg, #1e293b, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
 }
 .oracle-subtitle {
+    font-family: 'Outfit', sans-serif;
     color: var(--text-muted);
-    font-size: 0.65rem; letter-spacing: 0.1em;
-    text-transform: uppercase; font-weight: 700;
+    font-size: 0.65rem; letter-spacing: 0.2em;
+    text-transform: uppercase; font-weight: 600;
 }
 
 .status-container {
@@ -191,6 +205,11 @@ body {
 }
 
 .overview-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
+}
+
 .stat-box {
     padding: 20px; display: flex; flex-direction: column; justify-content: center; gap: 12px;
     transition: all 0.3s ease; position: relative; overflow: hidden;
@@ -198,9 +217,15 @@ body {
 .stat-box-icon {
     width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
     background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.08)); color: var(--accent-indigo);
+    animation: floatIcon 3.5s ease-in-out infinite;
+    transition: transform 0.3s ease;
+}
+.stat-box:hover .stat-box-icon {
+    animation: none;
+    transform: scale(1.15) rotate(8deg);
 }
 .stat-box:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
     box-shadow: var(--hover-shadow);
 }
 .stat-data .stat-val {
@@ -259,11 +284,11 @@ body {
     transition: all 0.2s ease;
     white-space: nowrap; display: flex; align-items: center; gap: 8px;
 }
-.tab-btn:hover { color: var(--text-primary); background: rgba(99,102,241,0.05); }
+.tab-btn:hover { color: var(--text-primary); background: rgba(20,184,166,0.05); }
 .tab-btn.active {
-    background: var(--accent-indigo);
+    background: #14b8a6; /* Teal */
     color: #fff;
-    box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    box-shadow: 0 4px 12px rgba(20,184,166,0.3);
 }
 .tab-badge {
     background: rgba(255,255,255,0.25); color: #fff;
@@ -303,6 +328,12 @@ body {
 .section-title-icon {
     width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
     background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.08)); color: var(--accent-indigo);
+    animation: floatIcon 3.5s ease-in-out infinite 0.5s; /* 0.5s delay to offset from others */
+    transition: transform 0.3s ease;
+}
+.section:hover .section-title-icon {
+    animation: none;
+    transform: scale(1.1) rotate(-5deg);
 }
 .section-title-count {
     font-size: var(--font-sm); color: var(--text-muted);
@@ -360,6 +391,10 @@ body {
 .impact-direction {
     font-size: 1.25rem; font-weight: 900;
     width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.mini-cell:hover .impact-direction {
+    transform: scale(1.2) translateY(-4px);
 }
 .impact-bullish { color: var(--positive); background: rgba(5,150,105,0.1); }
 .impact-bearish { color: var(--negative); background: rgba(220,38,38,0.1); }
@@ -405,8 +440,8 @@ body {
     font-size: 1.15rem; font-weight: 700; color: var(--text-primary);
 }
 .event-footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.event-chevron { flex-shrink: 0; color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.03); transition: all 0.2s; }
-.smart-event-card:hover .event-chevron { background: rgba(99,102,241,0.1); color: var(--accent-indigo); }
+.event-chevron { flex-shrink: 0; color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.03); transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.smart-event-card:hover .event-chevron { background: rgba(99,102,241,0.1); color: var(--accent-indigo); transform: scale(1.15) translateY(-2px); }
 
 .event-expanded-content {
     padding: 0 20px 20px; border-top: 1px solid rgba(0,0,0,0.05);
@@ -591,23 +626,135 @@ body {
 .top-pick-card:hover svg { transform: translate(2px, -2px) scale(1.1); }
 .top-pick-card svg { transition: transform 0.3s ease; }
 
-/* ═══ LOADING / EMPTY STATES ═══ */
-.loading-container {
+/* ═══ DRIBBBLE ELEVATED AI LOADER ═══ */
+.dribbble-loader-wrapper {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    min-height: calc(100vh - 4rem); gap: 1.5rem;
+    min-height: 100vh; width: 100vw;
+    background: radial-gradient(circle at center, #1a162b 0%, #060610 60%);
+    position: fixed; top: 0; left: 0; z-index: 9999;
+    gap: 2rem;
 }
-.loading-spinner {
-    width: 48px; height: 48px;
-    border: 4px solid rgba(99,102,241,0.15);
-    border-top-color: var(--accent-indigo);
+
+.hud-loader-container {
+    position: relative;
+    width: 180px; height: 180px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* Outer Ring */
+.hud-ring-outer {
+    position: absolute;
+    width: 100%; height: 100%;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    border: 2px solid rgba(16, 185, 129, 0.1);
+    border-top: 2px solid #10b981;
+    border-bottom: 2px solid #10b981;
+    animation: hudSpinOuter 8s linear infinite;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2), inset 0 0 15px rgba(16, 185, 129, 0.1);
 }
+
+/* Middle Ring (Dashed/Scanning) */
+.hud-ring-middle {
+    position: absolute;
+    width: 75%; height: 75%;
+    border-radius: 50%;
+    border: 2px dashed rgba(59, 130, 246, 0.4);
+    border-right: 3px solid #3b82f6;
+    animation: hudSpinMiddle 4s ease-in-out infinite alternate;
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.3);
+}
+
+/* Inner Core Ring */
+.hud-ring-inner {
+    position: absolute;
+    width: 45%; height: 45%;
+    border-radius: 50%;
+    border: 2px solid rgba(168, 85, 247, 0.2);
+    border-left: 2px solid #a855f7;
+    animation: hudSpinInner 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* Central Core Dot */
+.hud-core-dot {
+    width: 12px; height: 12px;
+    background: #a855f7;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #a855f7, 0 0 30px #a855f7;
+    animation: corePulseHUD 1.5s ease-in-out infinite alternate;
+}
+
+/* Targeting Crosshairs */
+.hud-crosshair-x, .hud-crosshair-y {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.15);
+}
+.hud-crosshair-x {
+    width: 120%; height: 1px;
+    animation: hudScanX 4s ease-in-out infinite alternate;
+}
+.hud-crosshair-y {
+    width: 1px; height: 120%;
+    animation: hudScanY 4s ease-in-out infinite alternate-reverse;
+}
+
+/* Typography Overrides for #1 */
 .loading-text {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.25rem; font-weight: 700;
-    color: var(--text-primary);
+    font-family: 'Syne', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    background: linear-gradient(to right, #10b981, #3b82f6, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textBreathe 2s ease-in-out infinite;
+    text-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+}
+
+.loading-subtext {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #10b981;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    animation: textFlicker 3s linear infinite;
+}
+
+/* Generic inline spinner for small widgets */
+.loading-spinner {
+    width: 32px; height: 32px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #a855f7;
+    border-radius: 50%;
+    animation: hudSpinOuter 1s linear infinite;
+}
+
+/* Animations HUD #1 */
+@keyframes hudSpinOuter { to { transform: rotate(360deg); } }
+@keyframes hudSpinMiddle { to { transform: rotate(-360deg); } }
+@keyframes hudSpinInner { to { transform: rotate(360deg); } }
+@keyframes corePulseHUD { 
+    0% { transform: scale(1); opacity: 0.7; } 
+    100% { transform: scale(1.6); opacity: 1; box-shadow: 0 0 20px #a855f7, 0 0 40px #ec4899; } 
+}
+@keyframes hudScanX { 
+    0%, 100% { transform: scaleX(0.8); opacity: 0.2; } 
+    50% { transform: scaleX(1); opacity: 0.8; } 
+}
+@keyframes hudScanY { 
+    0%, 100% { transform: scaleY(0.8); opacity: 0.2; } 
+    50% { transform: scaleY(1); opacity: 0.8; } 
+}
+@keyframes textBreathe {
+    0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.2)); }
+    50% { opacity: 1; filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.5)); }
+}
+@keyframes textFlicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+    20%, 22%, 24%, 55% { opacity: 0.3; }
 }
 
 .empty-state {

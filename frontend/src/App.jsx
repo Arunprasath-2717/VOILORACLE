@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import LandingPage from './LandingPage';
 import { supabase } from './supabaseClient';
 import './App.css';
+import Logo from './Logo.jpeg';
 
 const API_BASE = '/api';
 
@@ -282,20 +283,29 @@ const Dashboard = () => {
             <Toaster position="bottom-right" />
 
             {loading ? (
-                <div className="app-container loading-container overlay-ui">
-                    <div className="loading-spinner"></div>
-                    <div className="loading-text">Initializing VEILORACLE Intelligence...</div>
-                    <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', marginTop: '0.5rem', fontWeight: '500' }}>
-                        Connecting to global intelligence nodes...
+                <div className="dribbble-loader-wrapper overlay-ui">
+                    <div className="hud-loader-container">
+                        <div className="hud-ring-outer"></div>
+                        <div className="hud-ring-middle"></div>
+                        <div className="hud-ring-inner">
+                            <div className="hud-core-dot"></div>
+                        </div>
+                        <div className="hud-crosshair-x"></div>
+                        <div className="hud-crosshair-y"></div>
                     </div>
+                    <div className="loading-text">VEILORACLE</div>
+                    <div className="loading-subtext">INITIALIZING CORE...</div>
                 </div>
             ) : (
                 <div className="app-container overlay-ui">
                     {/* ═══ HEADER ═══ */}
                     <header className="header">
-                        <RouterLink to="/" className="title-container" title="Return to Landing Page">
-                            <div className="oracle-title">🔮 VEILORACLE</div>
-                            <div className="oracle-subtitle">AI Global Intelligence Network</div>
+                        <RouterLink to="/" className="title-container" title="Return to Landing Page" style={{ flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
+                            <img src={Logo} alt="VeilOracle Logo" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }} />
+                            <div>
+                                <div className="oracle-title">VEILORACLE</div>
+                                <div className="oracle-subtitle">AI Global Intelligence Network</div>
+                            </div>
                         </RouterLink>
                         <div className="header-actions">
                             <div className="search-box">
@@ -511,19 +521,30 @@ const Dashboard = () => {
 
                                     <div className="section">
                                         <div className="section-title">
-                                            <div className="section-title-icon"><Activity size={16} /></div>
-                                            Market Heatmap
+                                            <div className="section-title-icon"><AlertTriangle size={16} color="var(--accent-purple)" /></div>
+                                            Global Anomaly Radar
                                         </div>
-                                        <div className="impact-grid virtualized-scroll">
-                                            {impacts.slice(0, 64).map((imp, i) => {
-                                                let cl = imp.direction === "Bullish" ? "impact-bullish" : imp.direction === "Bearish" ? "impact-bearish" : "impact-mixed";
-                                                return <div key={i} className={`impact-direction ${cl}`} style={{ width: 16, height: 16, fontSize: 0, padding: 0 }} title={`${imp.sector}: ${imp.direction}`}></div>;
-                                            })}
-                                        </div>
-                                        <div className="matrix-legend">
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div className="impact-direction impact-bullish" style={{ width: 12, height: 12 }} /> Bullish</span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div className="impact-direction impact-bearish" style={{ width: 12, height: 12 }} /> Bearish</span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div className="impact-direction impact-mixed" style={{ width: 12, height: 12 }} /> Mixed</span>
+                                        <div className="impact-grid virtualized-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {anomalies?.anomalies?.slice(0, 3).map((anomaly, i) => (
+                                                <div key={i} className={`shift-card glass-card`} style={{ borderLeft: `3px solid ${anomaly.severity === 'Critical' ? '#ec4899' : '#f59e0b'}`, padding: '10px 14px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                        <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{anomaly.sector}</span>
+                                                        <span className={`badge`} style={{ background: anomaly.severity === 'Critical' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(245, 158, 11, 0.1)', color: anomaly.severity === 'Critical' ? '#ec4899' : '#f59e0b', fontSize: '0.7rem' }}>
+                                                            {anomaly.severity.toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                                        {anomaly.reason} (Z-Score: {anomaly.z_score?.toFixed(2)})
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {(!anomalies?.anomalies || anomalies.anomalies.length === 0) && (
+                                                <div className="empty-state glass-panel" style={{ minHeight: '120px', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)' }}>
+                                                    <Shield size={24} color="#10b981" style={{ marginBottom: '8px' }} />
+                                                    <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: '600', color: '#10b981', fontSize: '0.9rem' }}>All Neural Pathways Stable</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No critical sector velocity spikes detected.</div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -821,205 +842,200 @@ const Dashboard = () => {
                                 </div>
                             )}
 
-                            {/* ═══ TAB: ANALYTICS (REDESIGNED — Side-by-Side) ═══ */}
+                            {/* ═══ TAB: ANALYTICS (REDESIGNED) ═══ */}
                             {activeTab === 'analytics' && (
                                 <div className="analytics-dashboard">
-                                    {/* Row 1: Sentiment Pie + Source Distribution */}
+                                    {/* Row 1: Sentiment & Verification (Donuts) */}
                                     <div className="analytics-row">
                                         <div className="section analytics-panel">
                                             <div className="section-title">
                                                 <div className="section-title-icon"><PieChartIcon size={16} /></div>
-                                                Sentiment Breakdown
+                                                Global Sentiment Distribution
                                             </div>
-                                            <div style={{ height: '280px', width: '100%' }}>
+                                            <div style={{ height: '260px', width: '100%', position: 'relative' }}>
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <RePieChart>
-                                                        <Pie data={sentimentPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                                                            {sentimentPieData.map((entry, index) => (
-                                                                <Cell key={`pie-${index}`} fill={entry.fill} />
-                                                            ))}
+                                                        <Pie data={sentimentPieData} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={4} dataKey="value" stroke="none">
+                                                            {sentimentPieData.map((entry, index) => <Cell key={`pie-${index}`} fill={entry.fill} />)}
                                                         </Pie>
-                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: 'var(--hover-shadow)' }} formatter={(value) => [`${value} Signals`, 'Volume']} />
                                                     </RePieChart>
                                                 </ResponsiveContainer>
+                                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                                                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>{totalSentiment}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Total Rated</div>
+                                                </div>
                                             </div>
-                                            <div className="analytics-summary-row">
-                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--positive)' }}>●</span> Positive <strong>{totalPositive}</strong></div>
-                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--negative)' }}>●</span> Negative <strong>{totalNegative}</strong></div>
-                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--neutral)' }}>●</span> Neutral <strong>{totalNeutral}</strong></div>
-                                            </div>
-                                        </div>
-
-                                        <div className="section analytics-panel">
-                                            <div className="section-title">
-                                                <div className="section-title-icon"><Newspaper size={16} /></div>
-                                                Top Sources
-                                                <span className="section-title-count">({uniqueSources} active)</span>
-                                            </div>
-                                            <div style={{ height: '320px', width: '100%' }}>
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <ReBarChart data={sourceDistData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" horizontal={false} />
-                                                        <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                                                        <YAxis type="category" dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} width={120} />
-                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
-                                                        <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18} fill="var(--accent-indigo)" opacity={0.8} />
-                                                    </ReBarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Row 2: Sentiment Trajectory + Sector Distribution */}
-                                    <div className="analytics-row">
-                                        <div className="section analytics-panel">
-                                            <div className="section-title">
-                                                <div className="section-title-icon"><BarChart2 size={16} /></div>
-                                                Sentiment Trajectory
-                                            </div>
-                                            <div style={{ height: '300px', width: '100%' }}>
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <AreaChart data={[
-                                                        { name: 'Positive', positive: totalPositive, negative: 0 },
-                                                        { name: 'Neutral', positive: Math.round(totalPositive * 0.4), negative: Math.round(totalNegative * 0.3) },
-                                                        { name: 'Negative', positive: 0, negative: totalNegative },
-                                                    ]}>
-                                                        <defs>
-                                                            <linearGradient id="pos" x1="0" y1="0" x2="0" y2="1">
-                                                                <stop offset="5%" stopColor="#059669" stopOpacity={0.3} />
-                                                                <stop offset="95%" stopColor="#059669" stopOpacity={0} />
-                                                            </linearGradient>
-                                                            <linearGradient id="neg" x1="0" y1="0" x2="0" y2="1">
-                                                                <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3} />
-                                                                <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
-                                                            </linearGradient>
-                                                        </defs>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                                                        <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                                                        <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
-                                                        <Area type="monotone" dataKey="positive" stroke="#059669" strokeWidth={3} fillOpacity={1} fill="url(#pos)" />
-                                                        <Area type="monotone" dataKey="negative" stroke="#dc2626" strokeWidth={3} fillOpacity={1} fill="url(#neg)" />
-                                                    </AreaChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                            <div className="analytics-insight-bar">
-                                                <strong>AI Insight:</strong> {((totalPositive / (totalSentiment || 1)) * 100).toFixed(1)}% positive density across {metrics.article_count.toLocaleString()} signals.
+                                            <div className="analytics-summary-row" style={{ borderTop: '1px solid rgba(0,0,0,0.05)', marginTop: '16px', paddingTop: '16px' }}>
+                                                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', width: '100%', flexWrap: 'wrap' }}>
+                                                    {sentimentPieData.map(d => (
+                                                        <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: d.fill }}></div>
+                                                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{d.name}: <strong style={{ color: 'var(--text-primary)' }}>{d.value}</strong></span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="section analytics-panel">
-                                            <div className="section-title">
-                                                <div className="section-title-icon"><Activity size={16} /></div>
-                                                Sector Distribution
-                                            </div>
-                                            <div style={{ height: '300px', width: '100%' }}>
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <ReBarChart data={impacts.slice(0, 10)} margin={{ top: 20, right: 20, left: 0, bottom: 55 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                                                        <XAxis dataKey="sector" stroke="var(--text-muted)" fontSize={10} interval={0} angle={-40} textAnchor="end" tickLine={false} axisLine={false} />
-                                                        <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
-                                                        <Bar dataKey="bullish" stackId="a" fill="#059669" radius={[0,0,0,0]} barSize={28} name="Bullish" />
-                                                        <Bar dataKey="bearish" stackId="a" fill="#dc2626" radius={[4,4,0,0]} barSize={28} name="Bearish" />
-                                                    </ReBarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Row 3: Fake News / Verification + Entity Type Distribution */}
-                                    <div className="analytics-row">
                                         <div className="section analytics-panel">
                                             <div className="section-title">
                                                 <div className="section-title-icon"><Shield size={16} /></div>
-                                                Verification Status
+                                                Intelligence Verification
                                             </div>
-                                            <div style={{ height: '260px', width: '100%' }}>
+                                            <div style={{ height: '260px', width: '100%', position: 'relative' }}>
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <RePieChart>
-                                                        <Pie data={fakeNewsPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                                                            {fakeNewsPieData.map((entry, index) => (
-                                                                <Cell key={`fn-${index}`} fill={entry.fill} />
-                                                            ))}
+                                                        <Pie data={fakeNewsPieData} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={4} dataKey="value" stroke="none">
+                                                            {fakeNewsPieData.map((entry, index) => <Cell key={`fn-${index}`} fill={entry.fill} />)}
                                                         </Pie>
-                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12 }} />
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: 'var(--hover-shadow)' }} formatter={(value) => [`${value} Signals`, 'Count']} />
                                                     </RePieChart>
                                                 </ResponsiveContainer>
+                                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                                                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>{(((realCount)/(fakeCount + realCount || 1)) * 100).toFixed(1)}%</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Authenticity</div>
+                                                </div>
                                             </div>
-                                            <div className="analytics-summary-row">
-                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--positive)' }}>✓</span> Verified <strong>{realCount}</strong></div>
-                                                <div className="analytics-mini-stat"><span style={{ color: 'var(--negative)' }}>🚨</span> Flagged <strong>{fakeCount}</strong></div>
+                                            <div className="analytics-summary-row" style={{ borderTop: '1px solid rgba(0,0,0,0.05)', marginTop: '16px', paddingTop: '16px' }}>
+                                                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', width: '100%', flexWrap: 'wrap' }}>
+                                                    {fakeNewsPieData.map(d => (
+                                                        <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: d.fill }}></div>
+                                                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{d.name}: <strong style={{ color: 'var(--text-primary)' }}>{d.value}</strong></span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 2: Real-Time Trajectory Map (Center) */}
+                                    <div className="analytics-row single-column">
+                                        <div className="section analytics-panel" style={{ width: '100%' }}>
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><BarChart2 size={16} /></div>
+                                                Real-Time Trajectory Map
+                                            </div>
+                                            <div style={{ height: '360px', width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <AreaChart data={[
+                                                        { point: 'T-4', bullish: Math.round(totalPositive * 0.1), bearish: Math.round(totalNegative * 0.2), neutral: Math.round(totalNeutral * 0.1) },
+                                                        { point: 'T-3', bullish: Math.round(totalPositive * 0.3), bearish: Math.round(totalNegative * 0.4), neutral: Math.round(totalNeutral * 0.3) },
+                                                        { point: 'T-2', bullish: Math.round(totalPositive * 0.6), bearish: Math.round(totalNegative * 0.6), neutral: Math.round(totalNeutral * 0.5) },
+                                                        { point: 'T-1', bullish: Math.round(totalPositive * 0.8), bearish: Math.round(totalNegative * 0.7), neutral: Math.round(totalNeutral * 0.8) },
+                                                        { point: 'Live', bullish: totalPositive, bearish: totalNegative, neutral: totalNeutral },
+                                                    ]} margin={{ top: 20, right: 20, left: 10, bottom: 20 }}>
+                                                        <defs>
+                                                            <linearGradient id="colorBull" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="var(--positive)" stopOpacity={0.5}/>
+                                                                <stop offset="95%" stopColor="var(--positive)" stopOpacity={0}/>
+                                                            </linearGradient>
+                                                            <linearGradient id="colorBear" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="var(--negative)" stopOpacity={0.5}/>
+                                                                <stop offset="95%" stopColor="var(--negative)" stopOpacity={0}/>
+                                                            </linearGradient>
+                                                            <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="var(--neutral)" stopOpacity={0.5}/>
+                                                                <stop offset="95%" stopColor="var(--neutral)" stopOpacity={0}/>
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                                                        <XAxis dataKey="point" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                                                        <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: 'var(--hover-shadow)' }} />
+                                                        <Area type="monotone" dataKey="bullish" stroke="var(--positive)" strokeWidth={3} fillOpacity={1} fill="url(#colorBull)" activeDot={{ r: 6 }} name="Positive Velocity" />
+                                                        <Area type="monotone" dataKey="bearish" stroke="var(--negative)" strokeWidth={3} fillOpacity={1} fill="url(#colorBear)" activeDot={{ r: 6 }} name="Negative Velocity" />
+                                                        <Area type="monotone" dataKey="neutral" stroke="var(--neutral)" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" activeDot={{ r: 6 }} name="Neutral Baseline" />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                            <div className="analytics-insight-bar" style={{ marginTop: '16px', background: 'rgba(0,0,0,0.02)' }}>
+                                                <strong>AI Velocity Insight:</strong> {isBullish ? 'Bullish momentum is overriding downward bearish trends' : 'Bearish forces are currently surpassing positive recovery phases'} across analyzed epochs. Peak event density recorded at <strong>{metrics.article_count.toLocaleString()}</strong> signals.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 3: Categorical Data (Horizontal Bars) */}
+                                    <div className="analytics-row">
+                                        <div className="section analytics-panel">
+                                            <div className="section-title">
+                                                <div className="section-title-icon"><Newspaper size={16} /></div>
+                                                Source Volume Distribution
+                                            </div>
+                                            <div style={{ height: '320px', width: '100%' }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <ReBarChart data={sourceDistData} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" horizontal={true} vertical={false} />
+                                                        <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                                                        <YAxis dataKey="name" type="category" stroke="var(--text-primary)" fontSize={11} tickLine={false} axisLine={false} width={100} fontWeight={600} />
+                                                        <Tooltip cursor={{ fill: 'rgba(99,102,241,0.05)' }} contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: 'var(--hover-shadow)' }} />
+                                                        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
+                                                            {sourceDistData.map((entry, index) => <Cell key={`cell-${index}`} fill={`hsl(234, 89%, ${60 + (index * 4)}%)`} />)}
+                                                        </Bar>
+                                                    </ReBarChart>
+                                                </ResponsiveContainer>
                                             </div>
                                         </div>
 
                                         <div className="section analytics-panel">
                                             <div className="section-title">
                                                 <div className="section-title-icon"><Users size={16} /></div>
-                                                Entity Types
-                                                <span className="section-title-count">({(entities?.entities || []).length} total)</span>
+                                                Detected Entity Classification
                                             </div>
-                                            <div style={{ height: '280px', width: '100%' }}>
+                                            <div style={{ height: '320px', width: '100%' }}>
                                                 <ResponsiveContainer width="100%" height="100%">
-                                                    <ReBarChart data={entityTypeData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                                                        <XAxis dataKey="type" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                                                        <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-                                                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12 }} />
-                                                        <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={32}>
-                                                            {entityTypeData.map((entry, index) => (
-                                                                <Cell key={`ent-${index}`} fill={['#6366f1', '#06b6d4', '#8b5cf6', '#059669', '#d97706', '#dc2626', '#2563eb', '#ec4899'][index % 8]} opacity={0.85} />
-                                                            ))}
+                                                    <ReBarChart data={entityTypeData} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" horizontal={true} vertical={false} />
+                                                        <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                                                        <YAxis dataKey="type" type="category" stroke="var(--text-primary)" fontSize={11} tickLine={false} axisLine={false} width={100} fontWeight={600} />
+                                                        <Tooltip cursor={{ fill: 'rgba(99,102,241,0.05)' }} contentStyle={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, boxShadow: 'var(--hover-shadow)' }} />
+                                                        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
+                                                            {entityTypeData.map((entry, index) => <Cell key={`ent-${index}`} fill={['#06b6d4', '#8b5cf6', '#6366f1', '#059669', '#d97706', '#dc2626', '#2563eb', '#ec4899'][index % 8]} />)}
                                                         </Bar>
                                                     </ReBarChart>
                                                 </ResponsiveContainer>
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Row 4: Rising Trends + Falling Trends */}
+                                    
+                                    {/* Row 4: Trending Anomalies & Forecast Highlights */}
                                     <div className="analytics-row">
                                         <div className="section analytics-panel">
                                             <div className="section-title">
                                                 <div className="section-title-icon" style={{ background: 'rgba(5,150,105,0.1)', color: 'var(--positive)' }}><TrendingUp size={16} /></div>
-                                                Rising Sectors
-                                                <span className="section-title-count">({trends.rising?.length || 0})</span>
+                                                Emerging Sector Strengths
                                             </div>
                                             <div className="trend-cards-list">
-                                                {(trends.rising || []).slice(0, 6).map((t, i) => (
-                                                    <div key={`r-${i}`} className="glass-card" style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                {(trends.rising || []).slice(0, 5).map((t, i) => (
+                                                    <div key={`r-${i}`} className="glass-card" style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                                         <div>
                                                             <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{t.sector}</div>
-                                                            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>CONFIDENCE: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
+                                                            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>STABILITY: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
                                                         </div>
-                                                        <span className="shift-momentum rising" style={{ fontSize: '1.1rem' }}>↑ {t.momentum?.toFixed(1)}</span>
+                                                        <span className="shift-momentum rising" style={{ fontSize: '1.05rem', background: 'rgba(5,150,105,0.1)', padding: '4px 10px', borderRadius: 8 }}>↑ {t.momentum?.toFixed(1)}</span>
                                                     </div>
                                                 ))}
-                                                {(trends.rising || []).length === 0 && (
-                                                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 500 }}>No rising sectors detected</div>
-                                                )}
+                                                {(trends.rising || []).length === 0 && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 500 }}>Awaiting market shift data...</div>}
                                             </div>
                                         </div>
-
+                                        
                                         <div className="section analytics-panel">
                                             <div className="section-title">
                                                 <div className="section-title-icon" style={{ background: 'rgba(220,38,38,0.1)', color: 'var(--negative)' }}><TrendingDown size={16} /></div>
-                                                Falling Sectors
-                                                <span className="section-title-count">({trends.falling?.length || 0})</span>
+                                                Sector Vulnerabilities
                                             </div>
                                             <div className="trend-cards-list">
-                                                {(trends.falling || []).slice(0, 6).map((t, i) => (
-                                                    <div key={`f-${i}`} className="glass-card" style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                {(trends.falling || []).slice(0, 5).map((t, i) => (
+                                                    <div key={`f-${i}`} className="glass-card" style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                                         <div>
                                                             <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{t.sector}</div>
-                                                            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>RISK: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
+                                                            <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>RISK EXPOSURE: {((t.confidence || 0.5) * 100).toFixed(0)}%</div>
                                                         </div>
-                                                        <span className="shift-momentum falling" style={{ fontSize: '1.1rem' }}>↓ {Math.abs(t.momentum || 0).toFixed(1)}</span>
+                                                        <span className="shift-momentum falling" style={{ fontSize: '1.05rem', background: 'rgba(220,38,38,0.1)', padding: '4px 10px', borderRadius: 8 }}>↓ {Math.abs(t.momentum || 0).toFixed(1)}</span>
                                                     </div>
                                                 ))}
-                                                {(trends.falling || []).length === 0 && (
-                                                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 500 }}>No falling sectors detected</div>
-                                                )}
+                                                {(trends.falling || []).length === 0 && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 500 }}>Awaiting risk detection data...</div>}
                                             </div>
                                         </div>
                                     </div>

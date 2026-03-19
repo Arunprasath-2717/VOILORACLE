@@ -17,46 +17,27 @@ from backend import config
 
 logger = logging.getLogger("veiloracle.collector")
 
-
-def fetch_from_newsapi(category: str = "general", page_size: int = None) -> list[dict]:
-    """Fetch top headlines from NewsAPI free tier."""
-    if not config.NEWSAPI_KEY:
-        logger.info("No NEWSAPI_KEY — skipping NewsAPI.")
-        return []
-    try:
-        from newsapi import NewsApiClient
-        api = NewsApiClient(api_key=config.NEWSAPI_KEY)
-        page_size = page_size or config.MAX_ARTICLES_PER_FETCH
-        response = api.get_top_headlines(category=category, country=config.NEWS_COUNTRY, page_size=page_size)
-        if response.get("status") != "ok":
-            return []
-        articles = []
-        for raw in response.get("articles", []):
-            if not raw.get("title") or raw["title"] == "[Removed]":
-                continue
-            articles.append({
-                "title": raw["title"],
-                "description": raw.get("description") or "",
-                "source": raw.get("source", {}).get("name", "Unknown"),
-                "url": raw.get("url", ""),
-                "published_at": raw.get("publishedAt", datetime.utcnow().isoformat()),
-            })
-        logger.info("NewsAPI: %d articles (category=%s)", len(articles), category)
-        return articles
-    except Exception as e:
-        logger.error("NewsAPI failed: %s", e)
-        return []
-
 def fetch_from_newsdata() -> list[dict]:
     """Fetch from newsdata.io API - ACTIVE PRIMARY SOURCE."""
     if not config.NEWSDATA_API_KEY:
         logger.info("No NEWSDATA_API_KEY — skipping newsdata.io.")
         return []
     try:
-        url = f"https://newsdata.io/api/1/news?apikey={config.NEWSDATA_API_KEY}&language=en&max_results=50"
-        response = requests.get(url, timeout=10)
+        # Note: free tier uses 'size' not 'max_results'
+        url = f"https://newsdata.io/api/1/latest?apikey={config.NEWSDATA_API_KEY}&language=en&size=50"
+        response = requests.get(url, timeout=12)
+        if response.status_code == 422:
+            # Fallback: try without size param
+            url = f"https://newsdata.io/api/1/latest?apikey={config.NEWSDATA_API_KEY}&language=en"
+            response = requests.get(url, timeout=12)
+        if response.status_code == 429:
+            logger.warning("✗ Newsdata.io rate limited — skipping")
+            return []
         response.raise_for_status()
         data = response.json()
+        if data.get("status") != "success":
+            logger.warning("✗ Newsdata.io error: %s", data.get("results", {}).get("message", "unknown"))
+            return []
         articles = []
         for raw in data.get("results", []):
             if not raw.get("title"):
@@ -71,32 +52,41 @@ def fetch_from_newsdata() -> list[dict]:
         logger.info("✓ Newsdata.io: %d articles fetched", len(articles))
         return articles
     except Exception as e:
-        logger.warning("Newsdata.io failed: %s", e)
+        logger.warning("✗ Newsdata.io failed: %s", e)
         return []
 
-def fetch_from_gdelt_rawfiles() -> list[dict]:
-    """Fetch real-time news from GDELT API (fallback from raw files).
+def fetch_from_gdelt_rawfiles(max_articles: int = 50) -> list[dict]:
+    """Fetch real-time news from GDELT API.
     
-    GDELT API is simpler and more reliable than raw file parsing.
+    Capped to max_articles to prevent dominating the feed.
+    GDELT is free and always available, so we use it as a supplementary source.
     """
+    import time as _time
     articles = []
     try:
-        # Use GDELT API directly
         gdelt_url = "https://api.gdeltproject.org/api/v2/doc/doc"
         params = {
             "query": "news",
             "mode": "ArtList",
-            "maxrecords": 50,
+            "maxrecords": max_articles,
             "format": "json",
             "sort": "date"
         }
         
         response = requests.get(gdelt_url, params=params, timeout=15)
-        response.raise_for_status()
         
+        # Handle rate limiting with a single retry
+        if response.status_code == 429:
+            logger.warning("GDELT rate-limited (429), waiting 5s and retrying...")
+            _time.sleep(5)
+            response = requests.get(gdelt_url, params=params, timeout=15)
+            if response.status_code == 429:
+                logger.warning("✗ GDELT still rate-limited — skipping")
+                return []
+        
+        response.raise_for_status()
         data = response.json()
         
-        # Extract articles from GDELT API response
         for raw in data.get("articles", []):
             title = raw.get("title", "") or raw.get("url", "")
             url = raw.get("url", "")
@@ -111,12 +101,11 @@ def fetch_from_gdelt_rawfiles() -> list[dict]:
                     "published_at": datetime.utcnow().isoformat()
                 })
         
-        if articles:
-            logger.info(f"✓ GDELT API: {len(articles)} articles fetched")
+        logger.info(f"✓ GDELT API: {len(articles)} articles fetched (capped at {max_articles})")
         return articles
         
     except Exception as e:
-        logger.warning(f"GDELT API failed: {e}")
+        logger.warning(f"✗ GDELT API failed: {e}")
         return []
 
 
@@ -157,138 +146,91 @@ def fetch_from_rss(max_per_feed: int = 15) -> list[dict]:
     return articles
 
 
-def fetch_from_gnews() -> list[dict]:
-    """Fetch from GNews API."""
-    if not config.GNEWS_API_KEY:
-        logger.info("No GNEWS_API_KEY — skipping GNews.")
-        return []
+def fetch_from_newsapi(category: str = "general", page_size: int = 20) -> list[dict]:
+    if not config.NEWSAPI_KEY: return []
     try:
-        url = f"https://gnews.io/api/v4/top-headlines?category=general&lang=en&apikey={config.GNEWS_API_KEY}&max=10"
+        url = f"https://newsapi.org/v2/top-headlines?country=us&category={category}&pageSize={page_size}&apiKey={config.NEWSAPI_KEY}"
         response = requests.get(url, timeout=10)
-        response.raise_for_status()
         data = response.json()
         articles = []
         for raw in data.get("articles", []):
-            if not raw.get("title"):
-                continue
+            if not raw.get("title") or raw["title"] == "[Removed]": continue
             articles.append({
                 "title": raw["title"],
                 "description": raw.get("description") or "",
-                "source": raw.get("source", {}).get("name", "GNews"),
+                "source": raw.get("source", {}).get("name", "NewsAPI"),
                 "url": raw.get("url", ""),
-                "published_at": raw.get("publishedAt", datetime.utcnow().isoformat())
+                "published_at": raw.get("publishedAt", datetime.utcnow().isoformat()),
             })
-
-        # Fetch across multiple categories for broad domain coverage
-        for cat in ["business", "technology", "science", "health", "sports", "entertainment", "world"]:
-            try:
-                cat_url = f"https://gnews.io/api/v4/top-headlines?category={cat}&lang=en&apikey={config.GNEWS_API_KEY}&max=5"
-                cat_resp = requests.get(cat_url, timeout=8)
-                cat_resp.raise_for_status()
-                cat_data = cat_resp.json()
-                for raw in cat_data.get("articles", []):
-                    if not raw.get("title"):
-                        continue
-                    articles.append({
-                        "title": raw["title"],
-                        "description": raw.get("description") or "",
-                        "source": raw.get("source", {}).get("name", "GNews"),
-                        "url": raw.get("url", ""),
-                        "published_at": raw.get("publishedAt", datetime.utcnow().isoformat())
-                    })
-            except Exception:
-                pass  # Non-critical per-category failure
-        logger.info("✓ GNews: %d articles fetched", len(articles))
+        logger.info("✓ NewsAPI [%s]: %d articles", category, len(articles))
         return articles
     except Exception as e:
-        logger.warning("GNews failed: %s", e)
+        logger.warning("✗ NewsAPI failed: %s", e)
         return []
 
+def fetch_from_gnews() -> list[dict]:
+    if not config.GNEWS_API_KEY: return []
+    articles = []
+    categories = ["general", "world", "business", "technology"]
+    for cat in categories:
+        try:
+            url = f"https://gnews.io/api/v4/top-headlines?category={cat}&lang=en&max=20&apikey={config.GNEWS_API_KEY}"
+            response = requests.get(url, timeout=10)
+            if response.status_code == 403 or response.status_code == 429: break
+            data = response.json()
+            for raw in data.get("articles", []):
+                if not raw.get("title"): continue
+                articles.append({
+                    "title": raw["title"],
+                    "description": raw.get("description") or "",
+                    "source": raw.get("source", {}).get("name", "GNews"),
+                    "url": raw.get("url", ""),
+                    "published_at": raw.get("publishedAt", datetime.utcnow().isoformat())
+                })
+        except Exception: pass
+    logger.info("✓ GNews: %d articles", len(articles))
+    return articles
 
 def fetch_from_worldnews() -> list[dict]:
-    """Fetch from WorldNews API."""
-    if not config.WORLDNEWS_API_KEY:
-        logger.info("No WORLDNEWS_API_KEY — skipping WorldNews.")
-        return []
+    if not config.WORLDNEWS_API_KEY: return []
     try:
-        url = f"https://api.worldnewsapi.com/search-news?text=news&language=en&api-key={config.WORLDNEWS_API_KEY}"
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
+        url = f"https://api.worldnewsapi.com/search-news?text=news&language=en&number=50&api-key={config.WORLDNEWS_API_KEY}"
+        response = requests.get(url, timeout=12)
+        if response.status_code != 200: return []
         data = response.json()
         articles = []
         for raw in data.get("news", []):
-            if not raw.get("title"):
-                continue
+            if not raw.get("title"): continue
             articles.append({
                 "title": raw["title"],
-                "description": raw.get("text") or "",
+                "description": (raw.get("text") or "")[:500],
                 "source": raw.get("source", "WorldNewsAPI"),
                 "url": raw.get("url", ""),
                 "published_at": raw.get("publish_date", datetime.utcnow().isoformat())
             })
         logger.info("✓ WorldNews: %d articles fetched", len(articles))
         return articles
-    except Exception as e:
-        logger.warning("WorldNews failed: %s", e)
-        return []
-
-
-def fetch_from_thenews() -> list[dict]:
-    """Fetch from TheNews API."""
-    if not config.THENEWS_API_KEY:
-        logger.info("No THENEWS_API_KEY — skipping TheNews.")
-        return []
-    try:
-        url = f"https://api.thenewsapi.com/v1/news/top?api_token={config.THENEWS_API_KEY}&locale=us&language=en"
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        articles = []
-        for raw in data.get("data", []):
-            if not raw.get("title"):
-                continue
-            articles.append({
-                "title": raw["title"],
-                "description": raw.get("description") or "",
-                "source": raw.get("source", "TheNewsAPI"),
-                "url": raw.get("url", ""),
-                "published_at": raw.get("published_at", datetime.utcnow().isoformat())
-            })
-        logger.info("✓ TheNews: %d articles fetched", len(articles))
-        return articles
-    except Exception as e:
-        logger.warning("TheNews failed: %s", e)
-        return []
-
+    except Exception: return []
 
 def fetch_from_webz() -> list[dict]:
-    """Fetch from Webz.io News API Lite."""
-    if not config.WEBZ_API_KEY:
-        logger.info("No WEBZ_API_KEY — skipping Webz.io.")
-        return []
+    if not config.WEBZ_API_KEY: return []
     try:
         url = f"https://api.webz.io/newsApiLite?token={config.WEBZ_API_KEY}&q=news"
         response = requests.get(url, timeout=10)
-        response.raise_for_status()
         data = response.json()
         articles = []
         for raw in data.get("posts", []):
-            if not raw.get("title"):
-                continue
-            source_name = raw.get("thread", {}).get("site", "Webz.io")
+            if not raw.get("title"): continue
             articles.append({
                 "title": raw["title"],
                 "description": raw.get("text") or "",
-                "source": source_name,
+                "source": raw.get("thread", {}).get("site", "Webz.io"),
                 "url": raw.get("url", ""),
                 "published_at": raw.get("published", datetime.utcnow().isoformat())
             })
-        logger.info("✓ Webz.io: %d articles fetched", len(articles))
+        logger.info("✓ Webz.io: %d articles", len(articles))
         return articles
-    except Exception as e:
-        logger.warning("Webz.io failed: %s", e)
-        return []
-
+    except Exception: return []
 
 
 def fetch_sample_data() -> list[dict]:
@@ -298,49 +240,56 @@ def fetch_sample_data() -> list[dict]:
 
 
 def collect_news() -> list[dict]:
-    """Multi-tier collection. Always returns non-empty list."""
+    """Multi-tier collection from ALL configured API sources.
+    
+    Fetches from every available API key in parallel priority order.
+    Always returns a non-empty, deduplicated list.
+    """
+    source_counts = {}  # Track how many articles each source contributed
     articles = []
     
-    # 1. GNews API (New Primary Source)
-    logger.info("▸ Fetching from GNews...")
-    articles.extend(fetch_from_gnews())
+    def _extend(name, fetched):
+        source_counts[name] = len(fetched)
+        articles.extend(fetched)
     
-    # 2. WorldNews API
-    logger.info("▸ Fetching from WorldNews API...")
-    articles.extend(fetch_from_worldnews())
+    # ── PRIMARY PAID APIs (highest priority, richest data) ────────
+    logger.info("━" * 50)
+    logger.info("▸ [1/8] GNews API...")
+    _extend("GNews", fetch_from_gnews())
     
-    # 3. TheNews API
-    logger.info("▸ Fetching from TheNews API...")
-    articles.extend(fetch_from_thenews())
+    logger.info("▸ [2/8] NewsData.io API...")
+    _extend("Newsdata.io", fetch_from_newsdata())
     
-    # 4. Webz.io API
-    logger.info("▸ Fetching from Webz.io API...")
-    articles.extend(fetch_from_webz())
+    logger.info("▸ [3/8] WorldNews API...")
+    _extend("WorldNews", fetch_from_worldnews())
     
-    # 5. Newsdata.io 
-    logger.info("▸ Fetching from Newsdata.io...")
-    articles.extend(fetch_from_newsdata())
+    logger.info("▸ [4/8] Webz.io API...")
+    _extend("Webz.io", fetch_from_webz())
     
-    # 6. GDELT Raw Data Files (Global Event Database)
-    logger.info("▸ Fetching from GDELT raw files...")
-    articles.extend(fetch_from_gdelt_rawfiles())
-    
-    # 7. NewsAPI (if key available)
+    # ── SECONDARY APIs ────────────────────────────────────────────
+    logger.info("▸ [5/8] NewsAPI (multi-category)...")
     if config.NEWSAPI_KEY:
-        logger.info("▸ Fetching from NewsAPI...")
+        newsapi_all = []
         for cat in config.NEWS_CATEGORIES:
-            articles.extend(fetch_from_newsapi(category=cat))
-            
-    # 8. RSS Feeds (always fetch for maximum domain breadth)
-    logger.info("▸ Fetching from RSS feeds (multi-domain)...")
-    articles.extend(fetch_from_rss(max_per_feed=10))
-        
-    # 5. Sample data (last resort)
-    if not articles:
-        logger.warning("▸ No real data available, using sample articles...")
-        articles = fetch_sample_data()
+            newsapi_all.extend(fetch_from_newsapi(category=cat, page_size=20))
+        _extend("NewsAPI", newsapi_all)
+    else:
+        source_counts["NewsAPI"] = 0
     
-    # Deduplicate by title
+    # ── FREE / SUPPLEMENTARY SOURCES (capped to avoid flooding) ──
+    logger.info("▸ [6/8] GDELT (supplementary)...")
+    _extend("GDELT", fetch_from_gdelt_rawfiles(max_articles=50))
+    
+    logger.info("▸ [7/8] RSS Feeds (massive multi-domain)...")
+    _extend("RSS", fetch_from_rss(max_per_feed=20))
+        
+    # ── FALLBACK ──────────────────────────────────────────────────
+    if not articles:
+        logger.warning("▸ No real data from any source — using sample articles")
+        articles = fetch_sample_data()
+        source_counts["Sample"] = len(articles)
+    
+    # ── DEDUPLICATION ─────────────────────────────────────────────
     seen, unique = set(), []
     for a in articles:
         key = a.get("title", "").strip().lower()
@@ -348,5 +297,15 @@ def collect_news() -> list[dict]:
             seen.add(key)
             unique.append(a)
     
-    logger.info(f"✓ Collector: {len(unique)} unique articles collected from {len(articles)} total.")
+    # ── SOURCE BREAKDOWN REPORT ──────────────────────────────────
+    logger.info("━" * 50)
+    logger.info("📊 SOURCE COLLECTION BREAKDOWN:")
+    for src, cnt in sorted(source_counts.items(), key=lambda x: -x[1]):
+        bar = "█" * min(cnt, 40)
+        status = "✓" if cnt > 0 else "✗"
+        logger.info("  %s %-14s %3d articles  %s", status, src, cnt, bar)
+    logger.info("  ─────────────────────────────────")
+    logger.info("  Total raw: %d | After dedup: %d", len(articles), len(unique))
+    logger.info("━" * 50)
+    
     return unique
