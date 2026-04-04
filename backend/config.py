@@ -1,5 +1,5 @@
 """
-VEILORACLE — Centralized Configuration
+Kronaxis — Centralized Configuration
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 All settings, constants, and sector keyword maps.
 Covers ALL global sectors: finance, tech, health, science, politics,
@@ -22,7 +22,7 @@ load_dotenv(BASE_DIR / ".env")
 
 DB_PATH = DATA_DIR / "intelligence.db"
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/veiloracle")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/Kronaxis")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # ── API Keys & Credentials ─────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 """
-VEILORACLE — Region Intelligence Engine
+Kronaxis — Region Intelligence Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Detects location automatically and classifies articles into regions strictly:
 Tamil Nadu > India > World.
@@ -8,7 +8,7 @@ Tamil Nadu > India > World.
 import logging
 import re
 
-logger = logging.getLogger("veiloracle.classifier")
+logger = logging.getLogger("Kronaxis.classifier")
 
 TN_KEYWORDS = {
     # Core

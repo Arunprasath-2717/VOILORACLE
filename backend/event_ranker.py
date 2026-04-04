@@ -1,5 +1,5 @@
 """
-VEILORACLE — Event Ranker (Explainable Importance Scoring)
+Kronaxis — Event Ranker (Explainable Importance Scoring)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Ranks events (article clusters) by composite importance score.
 Score = f(article_count, sentiment_intensity, source_credibility)
@@ -15,7 +15,7 @@ from typing import List, Dict, Any
 
 from backend import config  # type: ignore
 
-logger = logging.getLogger("veiloracle.event_ranker")
+logger = logging.getLogger("Kronaxis.event_ranker")
 
 
 # ── Weights (empirically balanced — can be tuned) ─────────────────────────

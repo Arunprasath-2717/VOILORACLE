@@ -1,5 +1,5 @@
 """
-VEILORACLE — Real-time Subscription Listener
+Kronaxis — Real-time Subscription Listener
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Demonstrates backend-side listening for Supabase PostgreSQL changes.
 Useful for triggering external notifications or derived side-effects.
@@ -9,7 +9,7 @@ import logging
 import asyncio
 from backend.supabase_client import get_supabase_client
 
-logger = logging.getLogger("veiloracle.realtime")
+logger = logging.getLogger("Kronaxis.realtime")
 supabase = get_supabase_client()
 
 def on_article_insert(payload):

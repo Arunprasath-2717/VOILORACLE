@@ -1,5 +1,5 @@
 """
-VEILORACLE — Database Layer (SQLite + Upgraded Schema)
+Kronaxis — Database Layer (SQLite + Upgraded Schema)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SQLite storage for articles, events, impacts, and pipeline runs.
 Includes new fields: lifecycle, weight_score, fake_news, embedding (as JSON blob).
@@ -15,7 +15,7 @@ from backend.supabase_client import get_supabase_client
 
 supabase = get_supabase_client()
 
-logger = logging.getLogger("veiloracle.database")
+logger = logging.getLogger("Kronaxis.database")
 
 
 def get_connection() -> sqlite3.Connection:

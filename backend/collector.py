@@ -1,5 +1,5 @@
 """
-VEILORACLE — News Collector
+Kronaxis — News Collector
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Multi-tier collection: NewsData.io → GDELT Raw Files → RSS → sample data.
 """
@@ -15,7 +15,7 @@ import feedparser
 
 from backend import config
 
-logger = logging.getLogger("veiloracle.collector")
+logger = logging.getLogger("Kronaxis.collector")
 
 def fetch_from_newsdata() -> list[dict]:
     """Fetch from newsdata.io API - ACTIVE PRIMARY SOURCE."""

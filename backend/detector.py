@@ -1,5 +1,5 @@
 """
-VEILORACLE — Event Detector
+Kronaxis — Event Detector
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Groups articles into events via sentence embeddings + HDBSCAN.
 Includes deduplication, source credibility, time decay, and lifecycle tracking.
@@ -14,7 +14,7 @@ from datetime import datetime
 
 from backend import config  # type: ignore
 
-logger = logging.getLogger("veiloracle.detector")
+logger = logging.getLogger("Kronaxis.detector")
 
 _model = None
 

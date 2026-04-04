@@ -1,5 +1,5 @@
 """
-VEILORACLE — Supabase Database Ingestion
+Kronaxis — Supabase Database Ingestion
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Safely inserts processed articles into Supabase, managing deduplication (title + source)
 and centralized system logging.
@@ -10,7 +10,7 @@ from typing import Dict, Any, List
 from backend.supabase_client import get_supabase_client
 from datetime import datetime
 
-logger = logging.getLogger("veiloracle.insert_article")
+logger = logging.getLogger("Kronaxis.insert_article")
 supabase = get_supabase_client()
 
 def log_system_event(event: str, status: str, details: Dict = None):

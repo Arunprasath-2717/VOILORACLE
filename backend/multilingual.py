@@ -1,5 +1,5 @@
 """
-VEILORACLE — Multilingual Support Engine
+Kronaxis — Multilingual Support Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Provides zero-shot multilingual analysis and language detection.
 """
@@ -7,7 +7,7 @@ Provides zero-shot multilingual analysis and language detection.
 import logging
 from langdetect import detect, detect_langs
 
-logger = logging.getLogger("veiloracle.multilingual")
+logger = logging.getLogger("Kronaxis.multilingual")
 
 def analyze_multilingual_text(text: str) -> dict:
     """Analyze text for language context and detection."""

@@ -1,5 +1,5 @@
 /**
- * VEILORACLE API Service
+ * Kronaxis API Service
  * Centralized data fetching from FastAPI backend
  */
 

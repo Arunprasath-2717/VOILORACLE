@@ -1,5 +1,5 @@
 """
-VEILORACLE — Pipeline Orchestrator (Complete AI Edition)
+Kronaxis — Pipeline Orchestrator (Complete AI Edition)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 End-to-end: collect → preprocess → detect → sentiment → NER → sector route
           → model route → summarize → predict → intelligence → anomaly → trends → store.
@@ -33,7 +33,7 @@ from backend import multilingual  # type: ignore
 from backend import queue_manager  # type: ignore
 import threading
 
-logger = logging.getLogger("veiloracle.pipeline")
+logger = logging.getLogger("Kronaxis.pipeline")
 
 # ── Concurrency Executor for I/O-bound operations ────────────────────────────
 _executor = ThreadPoolExecutor(max_workers=4)
@@ -60,7 +60,7 @@ def _collector_worker():
 def run_pipeline(one_shot: bool = True):
     database.init_db()
     logger.info("=" * 60)
-    logger.info("VEILORACLE Intelligence Pipeline — Streaming Starting")
+    logger.info("Kronaxis Intelligence Pipeline — Streaming Starting")
     logger.info("=" * 60)
     
     if not one_shot:

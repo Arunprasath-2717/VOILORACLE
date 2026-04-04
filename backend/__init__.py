@@ -1,1 +1,1 @@
-"""VEILORACLE — AI-Powered Global Intelligence Engine"""
+"""Kronaxis — AI-Powered Global Intelligence Engine"""

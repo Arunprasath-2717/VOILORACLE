@@ -60,7 +60,7 @@ It combines **8 live data source APIs** with a **13-stage AI pipeline** built on
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        VEILORACLE INTELLIGENCE PIPELINE                     │
+│                        Kronaxis INTELLIGENCE PIPELINE                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌──────────────────────────────────────────────────────────────────┐       │
@@ -228,7 +228,7 @@ For deeper analysis, articles are routed to **domain-specialized large language 
 ## 📁 Project Structure
 
 ```
-VEILORACLE EE Project/
+Kronaxis EE Project/
 ├── main.py                    # CLI entry point (pipeline | server | frontend)
 ├── requirements.txt           # Python dependencies (24 packages)
 ├── docker-compose.yml         # Redis + PostgreSQL containers
@@ -282,7 +282,7 @@ VEILORACLE EE Project/
 
 ## 🌐 Global Sector Coverage
 
-VEILORACLE automatically classifies every article into one or more of **3000+ dynamically generated sectors** spanning:
+Kronaxis automatically classifies every article into one or more of **3000+ dynamically generated sectors** spanning:
 
 | Domain | Example Sectors |
 |--------|----------------|
@@ -312,7 +312,7 @@ Sectors are generated using a combinatorial algorithm with **base sectors × mod
 
 ## 🖥️ Intelligent Dashboard
 
-The VEILORACLE dashboard is a **6-tab React application** built with premium SaaS aesthetics:
+The Kronaxis dashboard is a **6-tab React application** built with premium SaaS aesthetics:
 
 ### Dashboard Tabs
 

@@ -1,5 +1,5 @@
 """
-VEILORACLE — Sentiment Analyzer
+Kronaxis — Sentiment Analyzer
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 VADER sentiment analysis for articles and events.
 """
@@ -7,7 +7,7 @@ VADER sentiment analysis for articles and events.
 import logging
 from backend import config
 
-logger = logging.getLogger("veiloracle.sentiment")
+logger = logging.getLogger("Kronaxis.sentiment")
 
 _analyzer = None
 

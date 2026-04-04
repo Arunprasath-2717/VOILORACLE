@@ -1,5 +1,5 @@
 """
-VEILORACLE — Anomaly Detection Engine
+Kronaxis — Anomaly Detection Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Uses statistical z-score analysis to detect unusual spikes in:
   - Article volume per sector
@@ -12,7 +12,7 @@ import numpy as np
 from collections import Counter, defaultdict
 from datetime import datetime
 
-logger = logging.getLogger("veiloracle.anomaly")
+logger = logging.getLogger("Kronaxis.anomaly")
 
 # Z-score threshold for flagging anomalies
 Z_THRESHOLD = 2.0

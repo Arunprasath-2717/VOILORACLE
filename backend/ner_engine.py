@@ -1,5 +1,5 @@
 """
-VEILORACLE — Named Entity Recognition Engine
+Kronaxis — Named Entity Recognition Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Uses spaCy NLP to extract entities: people, organizations, locations, money, dates.
 Falls back to regex-based extraction if spaCy is unavailable.
@@ -9,7 +9,7 @@ import logging
 import re
 from collections import Counter
 
-logger = logging.getLogger("veiloracle.ner")
+logger = logging.getLogger("Kronaxis.ner")
 
 _nlp = None
 _use_spacy = True

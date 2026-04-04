@@ -1,5 +1,5 @@
 """
-VEILORACLE — Sector Router
+Kronaxis — Sector Router
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Classifies articles into primary sectors using keyword matching.
 Routes each article to the correct sector for downstream AI model routing.
@@ -16,7 +16,7 @@ Sectors:
 import logging
 from typing import List, Dict, Any, Tuple
 
-logger = logging.getLogger("veiloracle.sector_router")
+logger = logging.getLogger("Kronaxis.sector_router")
 
 # ── Sector keyword definitions ───────────────────────────────────────────────
 # Each sector has weighted keywords: (keyword, weight)

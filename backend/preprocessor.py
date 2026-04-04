@@ -1,5 +1,5 @@
 """
-VEILORACLE — Text Preprocessor
+Kronaxis — Text Preprocessor
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Cleans and normalizes text for NLP processing.
 """
@@ -8,7 +8,7 @@ import logging
 import re
 import string
 
-logger = logging.getLogger("veiloracle.preprocessor")
+logger = logging.getLogger("Kronaxis.preprocessor")
 
 _nltk_ready = False
 

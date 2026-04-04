@@ -1,5 +1,5 @@
 """
-VEILORACLE — Hierarchical Region Data (30 Countries)
+Kronaxis — Hierarchical Region Data (30 Countries)
 """
 
 HIERARCHICAL_REGION_MAP = [

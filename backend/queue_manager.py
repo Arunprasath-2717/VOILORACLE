@@ -1,5 +1,5 @@
 """
-VEILORACLE — Message Queue Layer
+Kronaxis — Message Queue Layer
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Streaming architecture using Redis (or fallback to local queue via threading).
 Redis is optional — if not installed or not running, uses an in-memory queue.
@@ -9,7 +9,7 @@ import json
 import logging
 import queue
 
-logger = logging.getLogger("veiloracle.queue")
+logger = logging.getLogger("Kronaxis.queue")
 
 _redis_client = None
 _local_queue: queue.Queue = queue.Queue()
@@ -33,7 +33,7 @@ def push_articles(articles: list):
     if _redis_client:
         try:
             for a in articles:
-                _redis_client.lpush("veiloracle:news_pipeline", json.dumps(a))
+                _redis_client.lpush("Kronaxis:news_pipeline", json.dumps(a))
             return
         except Exception as e:
             logger.error("Redis push failed: %s", e)
@@ -49,7 +49,7 @@ def pop_articles(batch_size: int = 100, timeout: int = 5) -> list:
     if _redis_client:
         try:
             for _ in range(batch_size):
-                item = _redis_client.brpop("veiloracle:news_pipeline", timeout=1)
+                item = _redis_client.brpop("Kronaxis:news_pipeline", timeout=1)
                 if item:
                     articles.append(json.loads(item[1]))
                 else:

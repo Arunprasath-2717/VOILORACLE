@@ -1,5 +1,5 @@
 """
-VEILORACLE — AI Summarizer Engine
+Kronaxis — AI Summarizer Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Uses facebook/bart-large-cnn transformer model to generate concise summaries.
 Falls back to extractive summarization if transformers unavailable.
@@ -8,7 +8,7 @@ Falls back to extractive summarization if transformers unavailable.
 import logging
 from backend import config
 
-logger = logging.getLogger("veiloracle.summarizer")
+logger = logging.getLogger("Kronaxis.summarizer")
 
 _summarizer = None
 _use_transformers = True

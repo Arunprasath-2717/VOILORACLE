@@ -1,12 +1,12 @@
 """
-VEILORACLE — Topic Discovery Engine
+Kronaxis — Topic Discovery Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Automatically detects new news topics using BERTopic.
 """
 
 import logging
 
-logger = logging.getLogger("veiloracle.topic")
+logger = logging.getLogger("Kronaxis.topic")
 
 _topic_model = None
 

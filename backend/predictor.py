@@ -1,5 +1,5 @@
 """
-VEILORACLE — Impact Predictor
+Kronaxis — Impact Predictor
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Rule-based sector impact prediction.
 """
@@ -7,7 +7,7 @@ Rule-based sector impact prediction.
 import logging
 from backend import config
 
-logger = logging.getLogger("veiloracle.predictor")
+logger = logging.getLogger("Kronaxis.predictor")
 
 
 def match_sectors(text: str) -> list[dict]:

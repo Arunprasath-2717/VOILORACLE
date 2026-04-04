@@ -1,5 +1,5 @@
 """
-VEILORACLE — Trend Forecasting Engine
+Kronaxis — Trend Forecasting Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Uses linear regression on historical sentiment data to predict future trend direction.
 Provides per-sector momentum indicators and forecast confidence.
@@ -10,7 +10,7 @@ import numpy as np
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-logger = logging.getLogger("veiloracle.trends")
+logger = logging.getLogger("Kronaxis.trends")
 
 
 def compute_trend(values: list[float]) -> dict:

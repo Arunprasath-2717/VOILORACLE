@@ -1,5 +1,5 @@
 """
-VEILORACLE - Intelligence Engine
+Kronaxis - Intelligence Engine
 Calculates importance, risk, and sector impacts for events.
 Fully Pyre-safe version.
 """
@@ -7,7 +7,7 @@ Fully Pyre-safe version.
 from typing import List, Dict, Any
 import logging
 
-logger = logging.getLogger("veiloracle.intelligence")
+logger = logging.getLogger("Kronaxis.intelligence")
 
 
 # ---------- Utilities ----------

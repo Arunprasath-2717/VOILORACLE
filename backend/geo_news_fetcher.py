@@ -1,5 +1,5 @@
 """
-VEILORACLE — Real-Time Geo-Intelligence News Fetcher
+Kronaxis — Real-Time Geo-Intelligence News Fetcher
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Fetches live news from multiple APIs (GNews, NewsData.io, GDELT, NewsAPI, Currents)
 and classifies them into geointelligence categories grouped by region.
@@ -18,7 +18,7 @@ import feedparser  # type: ignore
 import backend.config as config
 from backend import database
 
-logger = logging.getLogger("veiloracle.geo_news")
+logger = logging.getLogger("Kronaxis.geo_news")
 
 # ── Intelligence Categories ──────────────────────────────────────────────────
 INTEL_CATEGORIES = {

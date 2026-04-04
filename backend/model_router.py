@@ -1,5 +1,5 @@
 """
-VEILORACLE — Model Router
+Kronaxis — Model Router
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Routes articles to sector-specific AI models for deep analysis.
 Fully Pyre2-safe version.
@@ -18,7 +18,7 @@ import os
 from typing import List, Dict, Any, Optional, Tuple
 from functools import lru_cache
 
-logger = logging.getLogger("veiloracle.model_router")
+logger = logging.getLogger("Kronaxis.model_router")
 
 # ── Hugging Face API token for large model inference ─────────────────────────
 HF_API_TOKEN: str = os.getenv("HF_API_TOKEN", "")

@@ -1,12 +1,12 @@
 """
-VEILORACLE — Fake News Detector
+Kronaxis — Fake News Detector
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Scores articles for fake news probability using roberta-base-openai-detector.
 """
 
 import logging
 
-logger = logging.getLogger("veiloracle.fakenews")
+logger = logging.getLogger("Kronaxis.fakenews")
 
 _detector = None
 
