@@ -38,4 +38,9 @@ Thumbs.db
 tmp/
 *.log
 
-
+# Large Binary Files
+frontend/src/3.mp4
+*.mp4
+*.mkv
+*.avi
+*.mov

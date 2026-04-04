@@ -5,11 +5,13 @@ import {
     Zap, BarChart3, Cloud, Globe as GlobeIcon,
     Shield, Cpu, Brain, Activity, Eye, Sparkles,
     TrendingUp, Users, Newspaper, Landmark, FlaskConical,
-    Layers, ArrowDown, Github, FileText, Network
+    Layers, ArrowDown, FileText, Network
 } from 'lucide-react';
 import './LandingPage.css';
 import Globe from 'react-globe.gl';
-import Logo from './Logo.jpeg';
+import Logo from './Logo.png';
+const NameLogo = Logo;
+import AnimatedNumber from './components/AnimatedNumber';
 
 /* ══════════════════════════════════════════════════════════
    DATA
@@ -122,27 +124,7 @@ const useScrollReveal = () => {
     }, []);
 };
 
-/* ── Animated Counter ── */
-const AnimatedNumber = ({ end, suffix = '' }) => {
-    const [val, setVal] = useState(0);
-    const ref = useRef();
-    useEffect(() => {
-        const obs = new IntersectionObserver(([e]) => {
-            if (e.isIntersecting) {
-                let start = 0; const step = end / 50;
-                const timer = setInterval(() => {
-                    start += step;
-                    if (start >= end) { setVal(end); clearInterval(timer); }
-                    else setVal(Math.floor(start));
-                }, 20);
-                obs.unobserve(e.target);
-            }
-        }, { threshold: 0.3 });
-        if (ref.current) obs.observe(ref.current);
-        return () => obs.disconnect();
-    }, [end]);
-    return <span ref={ref}>{val.toLocaleString()}{suffix}</span>;
-};
+/* ── Animated Counter (Imported) ── */
 
 /* ══════════════════════════════════════════════════════════
    MAIN LANDING PAGE
@@ -169,10 +151,9 @@ const LandingPage = () => {
 
             {/* ═══════ 1. NAVBAR ═══════ */}
             <nav className={`lp-nav ${navScrolled ? 'scrolled' : ''}`}>
-                <div className="lp-nav-logo">
-                    <img src={Logo} alt="VeilOracle Logo" className="logo-img" />
-                    <span className="logo-name">VEILORACLE</span>
-                </div>
+                <a href="#" className="lp-nav-logo" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                    <img src={NameLogo} alt="Kronaxis" className="logo-name-img" style={{ height: '200px', transform: 'translateY(12px)', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.12))' }} />
+                </a>
                 <button className="mobile-toggle" onClick={() => setMobileMenu(!mobileMenu)}>
                     {mobileMenu ? <X size={24} /> : <Menu size={24} />}
                 </button>
@@ -180,11 +161,9 @@ const LandingPage = () => {
                     <a href="#features">Features</a>
                     <a href="#technology">Technology</a>
                     <a href="#use-cases">Use Cases</a>
-                    <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="nav-github">
-                        <Github size={16} /> GitHub
-                    </a>
+
                     <Link to="/dashboard" className="lp-nav-cta" target="_blank" rel="noopener noreferrer">
-                        Launch Intelligence <ChevronRight size={16} />
+                        Open Dashboard <ChevronRight size={16} />
                     </Link>
                 </div>
             </nav>
@@ -198,17 +177,15 @@ const LandingPage = () => {
                             <span className="gradient-word">Powered by AI</span>
                         </h1>
                         <p className="hero-subtitle">
-                            VEILORACLE analyzes global news streams in real time, detects emerging events,
+                            Kronaxis analyzes global news streams in real time, detects emerging events,
                             evaluates sentiment across sectors, and delivers actionable intelligence
                             through a powerful analytics dashboard.
                         </p>
                         <div className="hero-actions">
                             <Link to="/dashboard" className="hero-btn-primary" target="_blank" rel="noopener noreferrer">
-                                Launch Dashboard <ArrowUpRight size={18} />
+                                Get Started <ArrowUpRight size={18} />
                             </Link>
-                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hero-btn-secondary">
-                                <Github size={18} /> View on GitHub
-                            </a>
+
                         </div>
                         <p className="hero-credibility">
                             Monitoring thousands of global news signals across finance, technology, politics, and more.
@@ -240,7 +217,7 @@ const LandingPage = () => {
                     </div>
                     <div className="problem-highlight sr" data-delay="2">
                         <Sparkles size={20} className="problem-icon" />
-                        <p>VEILORACLE transforms this information chaos into structured intelligence.</p>
+                        <p>Kronaxis transforms this information chaos into structured intelligence.</p>
                     </div>
                 </div>
             </section>
@@ -256,7 +233,7 @@ const LandingPage = () => {
                                 <span className="text-gradient">global intelligence</span>
                             </h2>
                             <p className="section-desc">
-                                VEILORACLE uses advanced AI models to detect real-world events from news data,
+                                Kronaxis uses advanced AI models to detect real-world events from news data,
                                 analyze sentiment signals, and reveal how developments influence global sectors in real time.
                             </p>
                         </div>
@@ -324,7 +301,7 @@ const LandingPage = () => {
                             Built on <span className="text-gradient">advanced artificial intelligence</span>
                         </h2>
                         <p className="section-desc">
-                            VEILORACLE combines multiple AI engines to convert unstructured news data
+                            Kronaxis combines multiple AI engines to convert unstructured news data
                             into structured intelligence insights.
                         </p>
                     </div>
@@ -357,7 +334,7 @@ const LandingPage = () => {
                             <span className="text-gradient">actionable intelligence</span>
                         </h2>
                         <p className="section-desc">
-                            VEILORACLE continuously collects and analyzes global news signals
+                            Kronaxis continuously collects and analyzes global news signals
                             to generate structured intelligence insights.
                         </p>
                     </div>
@@ -418,7 +395,7 @@ const LandingPage = () => {
                                 <span className="text-gradient">thousands of sectors</span>
                             </h2>
                             <p className="section-desc">
-                                VEILORACLE monitors more than 3,000 AI-generated sectors across the global
+                                Kronaxis monitors more than 3,000 AI-generated sectors across the global
                                 information ecosystem.
                             </p>
                         </div>
@@ -426,7 +403,7 @@ const LandingPage = () => {
                             {['Finance', 'Technology', 'Healthcare', 'Energy', 'Politics', 'Science', 'Sports', 'Entertainment', 'Environment'].map((s, i) => (
                                 <span key={i} className="sector-tag">{s}</span>
                             ))}
-                            <span className="sector-tag sector-more">+3,000 more</span>
+                            <span className="sector-tag sector-more"><AnimatedNumber end={3000} prefix="+" suffix=" more" /></span>
                         </div>
                     </div>
                 </div>
@@ -438,7 +415,7 @@ const LandingPage = () => {
                     <blockquote className="vision-quote sr">
                         <Sparkles size={24} className="vision-icon" />
                         <p>
-                            VEILORACLE aims to build a global intelligence layer that transforms
+                            Kronaxis aims to build a global intelligence layer that transforms
                             real-time information into meaningful insights.
                         </p>
                     </blockquote>
@@ -451,11 +428,9 @@ const LandingPage = () => {
                     <h2 className="cta-heading">Explore global intelligence<br />in real time</h2>
                     <div className="cta-actions">
                         <Link to="/dashboard" className="cta-btn-white" target="_blank" rel="noopener noreferrer">
-                            Launch Dashboard <ArrowUpRight size={18} />
+                            Explore Now <ArrowUpRight size={18} />
                         </Link>
-                        <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="cta-btn-outline">
-                            <Github size={18} /> View Project on GitHub
-                        </a>
+
                     </div>
                 </div>
             </section>
@@ -465,17 +440,15 @@ const LandingPage = () => {
                 <div className="footer-grid">
                     <div className="footer-brand-block">
                         <div className="footer-brand">
-                            <img src={Logo} alt="VeilOracle Logo" className="logo-img" />
-                            <span className="logo-name">VEILORACLE</span>
+                            <img src={NameLogo} alt="Kronaxis" className="logo-name-img" style={{ height: '140px' }} />
                         </div>
                         <p className="footer-tagline">AI-Powered Global Intelligence Platform</p>
                     </div>
                     <div className="footer-nav-block">
-                        <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
-                        <a href="#features">Documentation</a>
-                        <a href="#features">Contact</a>
+                        <a href="#features">Neural Architecture</a>
+                        <a href="#features">Intelligence Network</a>
                     </div>
-                    <p className="footer-copy">© 2026 VEILORACLE</p>
+                    <p className="footer-copy">© 2026 KRONAXIS</p>
                 </div>
             </footer>
         </div>

@@ -1,5 +1,5 @@
 """
-VEILORACLE — Main Entry Point
+Kronaxis — Main Entry Point
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Usage:
     python main.py pipeline          # Run intelligence pipeline (one-shot)

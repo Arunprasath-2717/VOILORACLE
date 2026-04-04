@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="frontend/src/Logo.jpeg" alt="VEILORACLE Logo" width="120" />
+  <img src="frontend/src/Logo.png" alt="Kronaxis Logo" width="120" />
 </p>
 
-<h1 align="center">🔮 VEILORACLE — AI-Powered Real-Time Global Intelligence Network</h1>
+<h1 align="center">🔮 Kronaxis — AI-Powered Real-Time Global Intelligence Network</h1>
 
 <p align="center">
   <strong>Enterprise-Grade NLP Pipeline</strong> · <strong>13 AI Engines</strong> · <strong>8 Data Sources</strong> · <strong>3000+ Sectors</strong>
@@ -37,7 +37,7 @@
 
 ## 🚀 Overview
 
-VEILORACLE is an **enterprise-grade, real-time global news intelligence system** that continuously streams, processes, and analyzes world events across every domain — finance, technology, sports, entertainment, science, defense, healthcare, environment, education, agriculture, fashion, legal, and more.
+Kronaxis is an **enterprise-grade, real-time global news intelligence system** that continuously streams, processes, and analyzes world events across every domain — finance, technology, sports, entertainment, science, defense, healthcare, environment, education, agriculture, fashion, legal, and more.
 
 It combines **8 live data source APIs** with a **13-stage AI pipeline** built on state-of-the-art Hugging Face Transformers, spaCy NER, HDBSCAN clustering, BERTopic discovery, and custom anomaly detection — all served through a **premium React dashboard** with real-time visualizations, semantic search, and glassmorphism aesthetics.
 
@@ -111,7 +111,7 @@ It combines **8 live data source APIs** with a **13-stage AI pipeline** built on
 
 ## 📡 Data Sources & API Integrations
 
-VEILORACLE aggregates from **8 distinct API sources** plus an extensive RSS feed network:
+Kronaxis aggregates from **8 distinct API sources** plus an extensive RSS feed network:
 
 | # | Source | Type | What It Provides |
 |---|--------|------|------------------|

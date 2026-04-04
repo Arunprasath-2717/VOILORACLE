@@ -83,6 +83,8 @@ def run_pipeline(one_shot: bool = True):
         database.start_pipeline_run(run_id)
 
         try:
+            overall_st = time.time()
+            
             # STEP 1: Process items from stream
             logger.info("▸ Step 1: Popping from message queue...")
             articles = queue_manager.pop_articles(batch_size=50)
@@ -91,58 +93,83 @@ def run_pipeline(one_shot: bool = True):
                 time.sleep(5)
                 continue
 
-            # STEP 2: Preprocessing & New NLP (with concurrency optimization)
+            # STEP 2: Preprocessing & New NLP
+            st = time.time()
             logger.info("▸ Step 2: NLP Preprocessing (clean, fake news, multilingual)...")
             articles = preprocessor.preprocess_articles(articles)
             articles = fake_news.analyze_articles_fake_news(articles)
             articles = multilingual.process_articles_multilingual(articles)
+            logger.info("  [Benchmark] Preprocessing completed in %.3fs", time.time() - st)
 
-            # STEP 3: Event Detection (Embeddings + HDBSCAN + Duplicate removal)
+            # STEP 3: Event Detection
+            st = time.time()
             logger.info("▸ Step 3: AI Event Detection (Embeddings + HDBSCAN)...")
             events = detector.detect_events(articles)
+            logger.info("  [Benchmark] Event Detection completed in %.3fs", time.time() - st)
 
-            # STEP 4: Sentiment Analysis (RoBERTa)
+            # STEP 4: Sentiment Analysis
+            st = time.time()
             logger.info("▸ Step 4/12: AI Sentiment Analysis (RoBERTa NLP)...")
             articles = sentiment.analyze_articles(articles)
+            logger.info("  [Benchmark] Sentiment Analysis completed in %.3fs", time.time() - st)
 
-            # STEP 5: Named Entity Recognition (spaCy)
+            # STEP 5: Named Entity Recognition
+            st = time.time()
             logger.info("▸ Step 5/12: AI Named Entity Recognition (spaCy NER)...")
             articles = ner_engine.enrich_articles_with_entities(articles)
             ner_results = ner_engine.extract_from_articles(articles)
+            logger.info("  [Benchmark] NER processing completed in %.3fs", time.time() - st)
 
-            # STEP 6: Sector Classification (Keyword Router)
+            # STEP 6: Sector Classification
+            st = time.time()
             logger.info("▸ Step 6/12: Sector Classification (Intelligent Routing)...")
             articles = sector_router.route_articles(articles)
+            logger.info("  [Benchmark] Sector Routing completed in %.3fs", time.time() - st)
 
-            # STEP 7: Sector-Specific AI Model Routing (with caching optimization)
+            # STEP 7: Sector-Specific AI Model Routing
+            st = time.time()
             logger.info("▸ Step 7/12: AI Model Routing (FinBERT/Qwen2/Mistral/DeepSeek/BioGPT/Llama3)...")
-            # Leverage the caching in model_router.analyze_with_model for repeated texts
             articles = model_router.route_and_analyze(articles)
+            logger.info("  [Benchmark] Model Analysis completed in %.3fs", time.time() - st)
 
-            # STEP 8: AI Summarization (BART Transformer)
+            # STEP 8: AI Summarization
+            st = time.time()
             logger.info("▸ Step 8/12: AI Summarization (BART Transformer)...")
             events = summarizer.summarize_events(events, articles)
+            logger.info("  [Benchmark] Summarization completed in %.3fs", time.time() - st)
 
-            # STEP 9: Impact Prediction (Sector Matching)
+            # STEP 9: Impact Prediction
+            st = time.time()
             logger.info("▸ Step 9/12: AI Impact Prediction (Sector Analysis)...")
             articles = predictor.predict_impacts(articles)
+            logger.info("  [Benchmark] Impact Prediction completed in %.3fs", time.time() - st)
 
-            # STEP 10: Intelligence Engine (Scores & Impacts)
+            # STEP 10: Intelligence Engine
+            st = time.time()
             logger.info("▸ Step 10/12: Intelligence Engine (Importance & Risk)...")
             events = intelligence.compute_intelligence(events, articles)
+            logger.info("  [Benchmark] Intelligence compute completed in %.3fs", time.time() - st)
 
-            # STEP 11: Anomaly Detection (Z-Score)
+            # STEP 11: Anomaly Detection
+            st = time.time()
             logger.info("▸ Step 11/12: AI Anomaly Detection (Z-Score Analysis)...")
             anomaly_results = anomaly_engine.run_anomaly_detection(articles)
+            logger.info("  [Benchmark] Anomaly Detection completed in %.3fs", time.time() - st)
 
-            # STEP 12: Trend Forecasting (Linear Regression)
+            # STEP 12: Trend Forecasting
+            st = time.time()
             logger.info("▸ Step 12: AI Trend Forecasting (Linear Regression)...")
             trend_results = trend_engine.analyze_sector_trends(articles)
             top_movers = trend_engine.get_top_movers(trend_results)
+            logger.info("  [Benchmark] Trend Forecasting completed in %.3fs", time.time() - st)
             
             # STEP 13: Topic Discovery
+            st = time.time()
             logger.info("▸ Step 13: Dynamic Topic Discovery (BERTopic)...")
             topics = topic_discovery.discover_topics(articles)
+            logger.info("  [Benchmark] Topic Discovery completed in %.3fs", time.time() - st)
+            
+            logger.info("  [Total Pipeline Latency Benchmark] Full cycle completed in %.3fs", time.time() - overall_st)
 
             # Generate Intelligence Output (structured JSON per event)
             logger.info("▸ Generating structured intelligence output...")

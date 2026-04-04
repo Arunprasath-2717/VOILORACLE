@@ -15,7 +15,7 @@ Sector → Model mapping:
 
 import logging
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from functools import lru_cache
 
 logger = logging.getLogger("veiloracle.model_router")
@@ -531,11 +531,14 @@ def route_and_analyze(articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Route each article to its sector-specific model and perform deep analysis.
     Adds 'model_analysis' field to each article.
+    Runs concurrently to avoid 5-minute delays on high volume.
     """
+    import concurrent.futures
+
     sector_counts: Dict[str, int] = {}
     model_counts: Dict[str, int] = {}
 
-    for article in articles:
+    def _process_single(article: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str]:
         sector: str = str(article.get("sector", "general"))
         sentiment: Dict[str, Any] = article.get("sentiment", {"label": "Neutral", "compound": 0.0})
         if not isinstance(sentiment, dict):
@@ -548,15 +551,24 @@ def route_and_analyze(articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
         analysis: Dict[str, Any] = analyze_with_model(text, sector, sentiment, title)
         article["model_analysis"] = analysis
-
-        # Track stats
-        sector_counts[sector] = sector_counts.get(sector, 0) + 1
         model_used: str = str(analysis.get("model_used", "unknown"))
-        model_counts[model_used] = model_counts.get(model_used, 0) + 1
+        return article, sector, model_used
+
+    # Run AI analysis in parallel for massive speedup
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        future_to_article = {executor.submit(_process_single, a): a for a in articles}
+        
+        for future in concurrent.futures.as_completed(future_to_article):
+            try:
+                _, sector, model_used = future.result()
+                sector_counts[sector] = sector_counts.get(sector, 0) + 1
+                model_counts[model_used] = model_counts.get(model_used, 0) + 1
+            except Exception as e:
+                logger.error("Parallel AI analysis failed for an article: %s", e)
 
     # Log routing statistics
     logger.info(
-        "Model routing complete: %d articles processed across %d sectors",
+        "Model routing complete: %d articles processed across %d sectors (Concurrent)",
         len(articles),
         len(sector_counts),
     )

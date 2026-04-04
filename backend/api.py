@@ -1,5 +1,5 @@
 """
-VEILORACLE - FastAPI Backend (Complete AI Edition)
+Kronaxis - FastAPI Backend (Complete AI Edition)
 Serves all AI-processed data to React frontend: metrics, events, impacts,
 NER entities, trend forecasts, anomaly alerts, and AI summaries.
 """
@@ -25,12 +25,26 @@ from backend import summarizer  # type: ignore
 from backend import pipeline  # type: ignore
 from backend import sector_router  # type: ignore
 from backend import model_router  # type: ignore
+from backend import geo_news_fetcher  # type: ignore
 import logging
 from pydantic import BaseModel  # type: ignore
 
-logger = logging.getLogger("veiloracle.api")
+logger = logging.getLogger("kronaxis.api")
 
-app = FastAPI(title="VEILORACLE API", description="AI-Powered Real-Time News Intelligence Engine")
+import time
+_API_CACHE = {}
+
+def _get_cache(key: str, ttl: int):
+    if key in _API_CACHE:
+        val, ts = _API_CACHE[key]
+        if time.time() - ts < ttl:
+            return val
+    return None
+
+def _set_cache(key: str, val):
+    _API_CACHE[key] = (val, time.time())
+
+app = FastAPI(title="Kronaxis API", description="AI-Powered Real-Time News Intelligence Engine")
 
 app.add_middleware(
     CORSMiddleware,
@@ -287,6 +301,9 @@ def get_entities():
 @app.get("/api/ai/trends")
 def get_trends():
     """Get AI-predicted sentiment trends per sector."""
+    cached = _get_cache("trends", 600) # Increased TTL to 10 minutes
+    if cached: return cached
+
     articles = database.get_recent_articles(200)
     enriched = []
     i = 0
@@ -307,6 +324,8 @@ def get_trends():
         i = i + 1
     trends = trend_engine.analyze_sector_trends(enriched)
     movers = trend_engine.get_top_movers(trends)
+    
+    _set_cache("trends", movers)
     return movers
 
 
@@ -380,7 +399,7 @@ def get_ai_summary():
     confidence = _round_dp(larger_pct / 100.0, 3)
 
     summary_text = (
-        "VEILORACLE Intelligence Core: Analyzed " + str(ac) + " articles. "
+        "Kronaxis Intelligence Core: Analyzed " + str(ac) + " articles. "
         "Neural stability at " + str(stability) + "%. Market mood: " + mood + "."
     )
 
@@ -439,6 +458,10 @@ def get_ai_models():
 @app.get("/api/ai/intelligence")
 def get_intelligence_output(limit: int = 25):
     """Get structured intelligence output for recent events."""
+    cache_key = f"intel_{limit}"
+    cached = _get_cache(cache_key, 60)
+    if cached: return cached
+
     events = database.get_all_events(limit)
     articles = database.get_recent_articles(200)
 
@@ -511,11 +534,14 @@ def get_intelligence_output(limit: int = 25):
         intelligence_items.append(output)
         ev_idx = ev_idx + 1
 
-    return {
+    result_data = {
         "intelligence": intelligence_items,
         "total_events": len(events),
         "total_articles": len(articles)
     }
+    
+    _set_cache(cache_key, result_data)
+    return result_data
 
 
 class AnalyzeRequest(BaseModel):
@@ -544,6 +570,22 @@ def analyze_text(req: AnalyzeRequest):
         "sector_keywords": sector_info["matched_keywords"],
         "analysis": analysis
     }
+
+
+@app.get("/api/geo-news")
+def get_geo_news(query: str = None):
+    """Fetch structured real-time geo-intelligence news natively."""
+    cache_key = f"geonews_{query}"
+    cached = _get_cache(cache_key, 60) # High TTL to prevent massive rate limits
+    if cached: return cached
+    
+    try:
+        data = geo_news_fetcher.fetch_geo_intelligence(query)
+        _set_cache(cache_key, data)
+        return data
+    except Exception as e:
+        logger.error("Error in get_geo_news: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # -- Static Files & SPA Support -----------------------------------------------

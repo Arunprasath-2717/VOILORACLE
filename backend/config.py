@@ -279,6 +279,8 @@ SECTOR_KEYWORDS = generate_sectors(3000)
 
 # ── Massive Article Dataset Generator (sample data for offline mode) ──────────
 SOURCES = [
+    "NewsData.io", "World News API", "GDELT Network", "RSS Feed Matrix",
+    "GNews Intelligence", "Webz.io Analytics", "NewsAPI Cluster",
     "Reuters", "Bloomberg", "TechCrunch", "Wired", "BBC News", "CNBC",
     "Financial Times", "The Verge", "Guardian", "Nature", "MarketWatch",
     "AP News", "ESPN", "Sky Sports", "Variety", "Rolling Stone",

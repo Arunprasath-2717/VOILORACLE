@@ -19,7 +19,7 @@ def match_sectors(text: str) -> list[dict]:
             matches.append({"sector": sector, "matched_keywords": matched,
                             "confidence": round(min(len(matched) / 3.0, 1.0), 3)})
     matches.sort(key=lambda m: -m["confidence"])
-    return matches
+    return matches[:5]
 
 
 def predict_direction(sentiment_label: str, sentiment_compound: float) -> dict:
