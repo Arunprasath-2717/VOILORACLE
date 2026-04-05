@@ -77,8 +77,15 @@ def _first_n(items, n):
 @app.on_event("startup")
 def startup_event():
     database.init_db()
-    thread = threading.Thread(target=pipeline.run_pipeline, kwargs={"one_shot": False}, daemon=True)
-    thread.start()
+    
+    # Only start background pipeline if not in a child worker or if specifically requested
+    # This prevents OOM on Render/Railway when multiple workers are used
+    if os.environ.get("KRONAXIS_DISABLE_PIPELINE") != "true":
+        logger.info("Starting background intelligence pipeline thread...")
+        thread = threading.Thread(target=pipeline.run_pipeline, kwargs={"one_shot": False}, daemon=True)
+        thread.start()
+    else:
+        logger.info("Background pipeline disabled via environment variable.")
 
 # ── WebSocket for live updates ─────────────────────────────────────────────────
 @app.websocket("/ws")
