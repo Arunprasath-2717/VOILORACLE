@@ -44,9 +44,14 @@ const Dashboard = () => {
             <div className="vo-hero-wrap">
 
               {/* ── VIDEO ── */}
-              <video autoPlay loop muted playsInline className="vo-hero-video">
-                <source src={heroVideo} type="video/mp4" />
-              </video>
+              <video 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                src={heroVideo}
+                className="vo-hero-video"
+              />
 
               {/* ── Vignette ── */}
               <div className="vo-hero-vignette" />

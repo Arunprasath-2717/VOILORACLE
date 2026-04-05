@@ -217,7 +217,7 @@ const GeoNewsPanel = () => {
                       setSelectedState(state.id === selectedState ? null : state.id);
                       setSelectedDistrict(null);
                     }}
-                    className={`vo-geonews-card vo-geonews-state-card \${selectedState === state.id ? 'active' : ''}`}
+                    className={`vo-geonews-card vo-geonews-state-card ${selectedState === state.id ? 'active' : ''}`}
                   >
                     <div className="vo-geonews-card-inner">
                       <span className="vo-geonews-card-title">{state.name}</span>
@@ -226,12 +226,12 @@ const GeoNewsPanel = () => {
                   </div>
                   
                   {/* Expandable Districts */}
-                  <div className={`vo-geonews-districts \${selectedState === state.id ? 'expanded' : ''}`}>
+                  <div className={`vo-geonews-districts ${selectedState === state.id ? 'expanded' : ''}`}>
                     {state.districts?.map(district => (
                       <div 
                         key={district.id}
                         onClick={() => setSelectedDistrict(district.id)}
-                        className={`vo-geonews-card vo-geonews-district-card \${selectedDistrict === district.id ? 'active' : ''}`}
+                        className={`vo-geonews-card vo-geonews-district-card ${selectedDistrict === district.id ? 'active' : ''}`}
                       >
                         <MapPin size={12} />
                         <span>{district.name}</span>
@@ -266,7 +266,7 @@ const GeoNewsPanel = () => {
                   <div className="vo-geonews-category-header" style={{
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                     padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.03)',
-                    borderLeft: `3px solid \${items[0]?.category_color || 'var(--color-primary)'}`,
+                    borderLeft: `3px solid ${items[0]?.category_color || 'var(--color-primary)'}`,
                     borderRadius: '4px', marginBottom: '0.8rem',
                     color: items[0]?.category_color || 'var(--color-primary)'
                   }}>
@@ -279,18 +279,18 @@ const GeoNewsPanel = () => {
                   
                   <div className="vo-geonews-category-items" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {items.map((news, i) => (
-                      <div key={news.id} className="vo-feed-card vo-geonews-feed-card" style={{animationDelay: `\${i * 0.05}s`, marginBottom: 0}}>
+                      <div key={news.id} className="vo-feed-card vo-geonews-feed-card" style={{animationDelay: `${i * 0.05}s`, marginBottom: 0}}>
                         <div className="vo-feed-card-header">
                           <h4 className="vo-geonews-feed-title">{news.title}</h4>
-                          <div className={`vo-geonews-sentiment \${(news.sentiment || 'neutral').toLowerCase()}`}>
-                            {news.sentiment} {news.score ? `(\${news.score})` : ''}
+                          <div className={`vo-geonews-sentiment ${(news.sentiment || 'neutral').toLowerCase()}`}>
+                            {news.sentiment} {news.score ? `(${news.score})` : ''}
                           </div>
                         </div>
                         <p className="vo-geonews-feed-summary">{news.summary}</p>
                         <div className="vo-geonews-feed-meta">
                           <div className="vo-geonews-feed-tags">
                             {(news.keywords || []).map((kw, idx) => (
-                              <span key={`\${news.id}-kw-\${idx}`} className="vo-geonews-feed-tag">{kw}</span>
+                              <span key={`${news.id}-kw-${idx}`} className="vo-geonews-feed-tag">{kw}</span>
                             ))}
                           </div>
                           <span className="vo-time-date">{(news.time ? new Date(news.time) : new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
