@@ -52,10 +52,23 @@ def _extractive_summary(text: str, max_sentences: int = 3) -> str:
 
 def summarize_text(text: str, max_length: int = 130, min_length: int = 30) -> str:
     """Generate a summary of the given text."""
-    if not text or len(text.strip()) < 50:
+    if not text or len(text.strip()) < 80:
         return text.strip() if text else ""
 
-    return _extractive_summary(text)
+    # Check for light mode to prevent OOM
+    if os.environ.get("KRONAXIS_LIGHT_MODE") == "true":
+        return _extractive_summary(text)
+
+    summ = _get_summarizer()
+    if _use_transformers and summ != "fallback":
+        try:
+            res = summ(text[:1024], max_length=max_length, min_length=min_length, do_sample=False)
+            return res[0]["summary_text"]
+        except Exception as e:
+            logger.warning("AI summarization failed: %s, using extractive fallback.", e)
+            return _extractive_summary(text)
+    else:
+        return _extractive_summary(text)
 
 
 def summarize_event(event: dict, articles: list[dict]) -> str:

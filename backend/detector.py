@@ -23,9 +23,19 @@ def _get_model():
     """Load the sentence transformer model globally."""
     global _model
     if _model is None:
-        from sentence_transformers import SentenceTransformer  # type: ignore
-        logger.info("Loading embedding model: %s", config.EMBEDDING_MODEL)
-        _model = SentenceTransformer(config.EMBEDDING_MODEL)
+        # Check for light mode to prevent OOM
+        if os.environ.get("KRONAXIS_LIGHT_MODE") == "true":
+            logger.info("KRONAXIS_LIGHT_MODE is enabled. Skipping SentenceTransformer loading.")
+            _model = "light"
+            return _model
+
+        try:
+            from sentence_transformers import SentenceTransformer  # type: ignore
+            logger.info("Loading embedding model: %s", config.EMBEDDING_MODEL)
+            _model = SentenceTransformer(config.EMBEDDING_MODEL)
+        except Exception as e:
+            logger.warning("SentenceTransformer not available: %s, using light mode.", e)
+            _model = "light"
     return _model
 
 
@@ -35,6 +45,11 @@ def generate_embeddings(texts: list[str]) -> np.ndarray:
         return np.array([])
     
     model = _get_model()
+    if model == "light":
+        # Return dummy embeddings so clustering doesn't crash but also doesn't do much
+        # We will handle light clustering separately
+        return np.zeros((len(texts), 384))
+
     embeddings = model.encode(texts, show_progress_bar=False, batch_size=32)
     logger.info("Generated embeddings: shape %s", embeddings.shape)
     return embeddings

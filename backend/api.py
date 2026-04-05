@@ -73,13 +73,42 @@ def _first_n(items, n):
         i = i + 1
     return result
 
+# Global Light Mode status
+LIGHT_MODE = os.environ.get("KRONAXIS_LIGHT_MODE") == "true"
+
+@app.get("/api/health")
+def health_check():
+    """Ultra-light health check for deployment monitors (Render/Railway)."""
+    # Check for video asset status (LFS debugging)
+    video_path = os.path.join(config.BASE_DIR, "frontend", "public", "3.mp4")
+    video_info = {"exists": False, "size_mb": 0}
+    if os.path.exists(video_path):
+        video_info["exists"] = True
+        video_info["size_mb"] = round(os.path.getsize(video_path) / (1024 * 1024), 2)
+    
+    return {
+        "status": "online",
+        "timestamp": datetime.utcnow().isoformat(),
+        "light_mode": LIGHT_MODE,
+        "pipeline_active": os.environ.get("KRONAXIS_DISABLE_PIPELINE") != "true",
+        "video_asset": video_info
+    }
 
 @app.on_event("startup")
 def startup_event():
-    database.init_db()
+    logger.info("Initializing Kronaxis API...")
+    if LIGHT_MODE:
+        logger.info("ENVIRONMENT: LIGHT_MODE is ENABLED. Memory-intensive AI models will be bypassed.")
+    else:
+        logger.info("ENVIRONMENT: HEAVY AI MODE is ENABLED. Ensure >1GB RAM is available.")
+    
+    try:
+        database.init_db()
+    except Exception as e:
+        logger.error("Failed to initialize database: %s", e)
+        # Continue anyway, let later routes fail with 500 if DB is actually borked
     
     # Only start background pipeline if not in a child worker or if specifically requested
-    # This prevents OOM on Render/Railway when multiple workers are used
     if os.environ.get("KRONAXIS_DISABLE_PIPELINE") != "true":
         logger.info("Starting background intelligence pipeline thread...")
         thread = threading.Thread(target=pipeline.run_pipeline, kwargs={"one_shot": False}, daemon=True)

@@ -18,6 +18,13 @@ _use_spacy = True
 def _get_nlp():
     global _nlp, _use_spacy
     if _nlp is None:
+        # Check for light mode to prevent OOM on platforms like Render Free Tier
+        if os.environ.get("KRONAXIS_LIGHT_MODE") == "true":
+            logger.info("KRONAXIS_LIGHT_MODE is enabled. Using regex fallback for NER.")
+            _use_spacy = False
+            _nlp = "fallback"
+            return _nlp
+
         try:
             import spacy  # type: ignore
             try:

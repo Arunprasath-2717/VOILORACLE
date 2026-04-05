@@ -13,6 +13,13 @@ _topic_model = None
 def _get_topic_model():
     global _topic_model
     if _topic_model is None:
+        # Check for light mode to prevent OOM
+        import os
+        if os.environ.get("KRONAXIS_LIGHT_MODE") == "true":
+            logger.info("KRONAXIS_LIGHT_MODE is enabled. Skipping BERTopic.")
+            _topic_model = "fallback"
+            return _topic_model
+
         try:
             from bertopic import BERTopic
             from sentence_transformers import SentenceTransformer

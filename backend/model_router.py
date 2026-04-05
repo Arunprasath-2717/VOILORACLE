@@ -157,6 +157,12 @@ def _round_val(value: float, decimals: int) -> float:
 def _get_local_model(sector: str) -> Any:
     """Load a local HuggingFace pipeline model (FinBERT, BioGPT, etc.)."""
     global _loaded_models
+
+    # Check for light mode to prevent OOM
+    if os.environ.get("KRONAXIS_LIGHT_MODE") == "true":
+        logger.debug("KRONAXIS_LIGHT_MODE is enabled. Skipping local model loading for %s.", sector)
+        return None
+
     if sector in _loaded_models:
         return _loaded_models[sector]
 
