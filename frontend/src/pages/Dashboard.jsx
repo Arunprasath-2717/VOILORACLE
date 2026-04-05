@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import Header from '../components/dashboard/Header';
 
-// Import video as a hashed asset
-import heroVideo from '../assets/3.mp4';
+// Static asset from the public folder (no import needed)
+const heroVideo = '/3.mp4';
 
 import TabNavigation from '../components/dashboard/TabNavigation';
 import OverviewPanel from '../components/dashboard/OverviewPanel';
