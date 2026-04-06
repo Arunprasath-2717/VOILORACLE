@@ -240,56 +240,53 @@ def fetch_sample_data() -> list[dict]:
 
 
 def collect_news() -> list[dict]:
-    """Multi-tier collection from ALL configured API sources.
+    """Multi-tier collection from ALL configured API sources concurrently."""
+    import concurrent.futures
     
-    Fetches from every available API key in parallel priority order.
-    Always returns a non-empty, deduplicated list.
-    """
-    source_counts = {}  # Track how many articles each source contributed
+    source_counts = {}
     articles = []
     
-    def _extend(name, fetched):
-        source_counts[name] = len(fetched)
-        articles.extend(fetched)
-    
-    # ── PRIMARY PAID APIs (highest priority, richest data) ────────
     logger.info("━" * 50)
-    logger.info("▸ [1/8] GNews API...")
-    _extend("GNews", fetch_from_gnews())
+    logger.info("▸ Initiating concurrent news collection from all tiers...")
+
+    # Define all fetch tasks with name and callable
+    tasks = [
+        ("GNews", fetch_from_gnews),
+        ("Newsdata.io", fetch_from_newsdata),
+        ("WorldNews", fetch_from_worldnews),
+        ("Webz.io", fetch_from_webz),
+        ("GDELT", lambda: fetch_from_gdelt_rawfiles(max_articles=200)),
+        ("RSS", lambda: fetch_from_rss(max_per_feed=50))
+    ]
     
-    logger.info("▸ [2/8] NewsData.io API...")
-    _extend("Newsdata.io", fetch_from_newsdata())
-    
-    logger.info("▸ [3/8] WorldNews API...")
-    _extend("WorldNews", fetch_from_worldnews())
-    
-    logger.info("▸ [4/8] Webz.io API...")
-    _extend("Webz.io", fetch_from_webz())
-    
-    # ── SECONDARY APIs ────────────────────────────────────────────
-    logger.info("▸ [5/8] NewsAPI (multi-category)...")
     if config.NEWSAPI_KEY:
-        newsapi_all = []
-        for cat in config.NEWS_CATEGORIES:
-            newsapi_all.extend(fetch_from_newsapi(category=cat, page_size=20))
-        _extend("NewsAPI", newsapi_all)
+        def fetch_all_newsapi():
+            newsapi_all = []
+            for cat in config.NEWS_CATEGORIES:
+                newsapi_all.extend(fetch_from_newsapi(category=cat, page_size=20))
+            return newsapi_all
+        tasks.append(("NewsAPI", fetch_all_newsapi))
     else:
         source_counts["NewsAPI"] = 0
-    
-    # ── FREE / SUPPLEMENTARY SOURCES (capped to avoid flooding) ──
-    logger.info("▸ [6/8] GDELT (supplementary)...")
-    _extend("GDELT", fetch_from_gdelt_rawfiles(max_articles=200))
-    
-    logger.info("▸ [7/8] RSS Feeds (massive multi-domain)...")
-    _extend("RSS", fetch_from_rss(max_per_feed=50))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(tasks)) as executor:
+        future_to_name = {executor.submit(func): name for name, func in tasks}
         
-    # ── FALLBACK ──────────────────────────────────────────────────
+        for future in concurrent.futures.as_completed(future_to_name):
+            name = future_to_name[future]
+            try:
+                fetched = future.result()
+                source_counts[name] = len(fetched)
+                articles.extend(fetched)
+            except Exception as exc:
+                logger.warning(f"Fetch task {name} generated an exception: {exc}")
+                source_counts[name] = 0
+
     if not articles:
         logger.warning("▸ No real data from any source — using sample articles")
         articles = fetch_sample_data()
         source_counts["Sample"] = len(articles)
     
-    # ── DEDUPLICATION ─────────────────────────────────────────────
     seen, unique = set(), []
     for a in articles:
         key = a.get("title", "").strip().lower()
@@ -297,7 +294,6 @@ def collect_news() -> list[dict]:
             seen.add(key)
             unique.append(a)
     
-    # ── SOURCE BREAKDOWN REPORT ──────────────────────────────────
     logger.info("━" * 50)
     logger.info("📊 SOURCE COLLECTION BREAKDOWN:")
     for src, cnt in sorted(source_counts.items(), key=lambda x: -x[1]):
