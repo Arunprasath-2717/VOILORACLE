@@ -612,7 +612,7 @@ def analyze_text(req: AnalyzeRequest):
 def get_geo_news(query: str = None):
     """Fetch structured real-time geo-intelligence news natively."""
     cache_key = f"geonews_{query}"
-    cached = _get_cache(cache_key, 60) # High TTL to prevent massive rate limits
+    cached = _get_cache(cache_key, 30) # Reduced TTL for real-time fetching
     if cached: return cached
     
     try:

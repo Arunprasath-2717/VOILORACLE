@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Globe, MapPin, Map, Tag, ChevronRight, Activity, Zap, Server, Search } from 'lucide-react';
 import { useGeoNews } from '../../hooks/useApi';
 import './GeoNewsPanel.css';
@@ -15,11 +15,15 @@ const GeoNewsPanel = () => {
   const [showAllKeywords, setShowAllKeywords] = useState(false);
 
   // Auto-select first active country if none selected
-  if (data?.regions && Array.isArray(data.regions) && data.regions.length > 0 && !selectedCountry && !loading) {
-    // If we're searching and have a global hub, use that. Otherwise use the first region with news.
-    const autoSelectRegion = data.regions.find(r => r.news?.length > 0) || data.regions[0];
-    setSelectedCountry(autoSelectRegion.id);
-  }
+  useEffect(() => {
+    if (data?.regions && Array.isArray(data.regions) && data.regions.length > 0 && !selectedCountry && !loading) {
+      // If we're searching and have a global hub, use that. Otherwise use the first region with news.
+      const autoSelectRegion = data.regions.find(r => r.news?.length > 0) || data.regions[0];
+      if (autoSelectRegion?.id) {
+        setSelectedCountry(autoSelectRegion.id);
+      }
+    }
+  }, [data, selectedCountry, loading]);
 
   const handleSearch = (e) => {
     e.preventDefault();

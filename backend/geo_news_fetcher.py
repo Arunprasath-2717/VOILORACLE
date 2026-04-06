@@ -385,7 +385,7 @@ def _fetch_rss(feed_urls: list, limit_per_feed=5) -> list:
     return articles
 
 # ── Cache ────────────────────────────────────────────────────────────────────
-_cache = {"data": None, "timestamp": 0, "ttl": 1800} # 30 minutes cache for performance
+_cache = {"data": None, "timestamp": 0, "ttl": 30} # Reduced to 30 seconds for real-time fetching
 
 def _extract_keywords(text: str) -> list:
     text_lower = text.lower()
