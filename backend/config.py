@@ -52,8 +52,8 @@ SENTIMENT_MODEL = "cardiffnlp/twitter-roberta-base-sentiment"
 NER_MODEL = "en_core_web_sm"  # spaCy model
 
 # ── Collection Settings ──────────────────────────────────────────────────────
-FETCH_INTERVAL_SECONDS = 180
-MAX_ARTICLES_PER_FETCH = 50
+FETCH_INTERVAL_SECONDS = 30
+MAX_ARTICLES_PER_FETCH = 200
 NEWS_CATEGORIES = ["general", "technology", "business", "science", "health", "sports", "entertainment"]
 NEWS_COUNTRY = "us"
 

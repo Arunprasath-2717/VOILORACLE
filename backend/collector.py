@@ -55,7 +55,7 @@ def fetch_from_newsdata() -> list[dict]:
         logger.warning("✗ Newsdata.io failed: %s", e)
         return []
 
-def fetch_from_gdelt_rawfiles(max_articles: int = 50) -> list[dict]:
+def fetch_from_gdelt_rawfiles(max_articles: int = 200) -> list[dict]:
     """Fetch real-time news from GDELT API.
     
     Capped to max_articles to prevent dominating the feed.
@@ -109,7 +109,7 @@ def fetch_from_gdelt_rawfiles(max_articles: int = 50) -> list[dict]:
         return []
 
 
-def fetch_from_rss(max_per_feed: int = 15) -> list[dict]:
+def fetch_from_rss(max_per_feed: int = 50) -> list[dict]:
     """Parse RSS feeds. No API key required. Handles timeouts gracefully."""
     articles = []
     for feed_url in config.RSS_FEEDS:
@@ -278,10 +278,10 @@ def collect_news() -> list[dict]:
     
     # ── FREE / SUPPLEMENTARY SOURCES (capped to avoid flooding) ──
     logger.info("▸ [6/8] GDELT (supplementary)...")
-    _extend("GDELT", fetch_from_gdelt_rawfiles(max_articles=50))
+    _extend("GDELT", fetch_from_gdelt_rawfiles(max_articles=200))
     
     logger.info("▸ [7/8] RSS Feeds (massive multi-domain)...")
-    _extend("RSS", fetch_from_rss(max_per_feed=20))
+    _extend("RSS", fetch_from_rss(max_per_feed=50))
         
     # ── FALLBACK ──────────────────────────────────────────────────
     if not articles:

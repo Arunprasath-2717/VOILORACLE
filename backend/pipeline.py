@@ -87,7 +87,7 @@ def run_pipeline(one_shot: bool = True):
             
             # STEP 1: Process items from stream
             logger.info("▸ Step 1: Popping from message queue...")
-            articles = queue_manager.pop_articles(batch_size=50)
+            articles = queue_manager.pop_articles(batch_size=200)
             if not articles:
                 if one_shot: break
                 time.sleep(5)
