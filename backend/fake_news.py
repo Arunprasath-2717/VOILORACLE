@@ -5,15 +5,19 @@ Scores articles for fake news probability using roberta-base-openai-detector.
 """
 
 import logging
+import os
 
 logger = logging.getLogger("Kronaxis.fakenews")
 
 _detector = None
 
-
 def _get_detector():
     global _detector
     if _detector is None:
+        if os.environ.get("KRONAXIS_LIGHT_MODE") == "true":
+            logger.info("KRONAXIS_LIGHT_MODE enabled. Using fallback Fake News detector.")
+            _detector = "fallback"
+            return _detector
         try:
             from transformers import pipeline
             logger.info("Loading Fake News detection model...")

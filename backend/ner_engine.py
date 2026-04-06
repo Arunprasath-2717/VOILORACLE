@@ -6,6 +6,7 @@ Falls back to regex-based extraction if spaCy is unavailable.
 """
 
 import logging
+import os
 import re
 from collections import Counter
 

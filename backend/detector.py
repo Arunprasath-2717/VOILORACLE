@@ -6,6 +6,7 @@ Includes deduplication, source credibility, time decay, and lifecycle tracking.
 """
 
 import logging
+import os
 from typing import Any, List, Dict, Set
 import numpy as np  # type: ignore
 import hdbscan  # type: ignore

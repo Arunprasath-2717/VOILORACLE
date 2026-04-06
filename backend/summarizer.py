@@ -6,6 +6,7 @@ Falls back to extractive summarization if transformers unavailable.
 """
 
 import logging
+import os
 from backend import config
 
 logger = logging.getLogger("Kronaxis.summarizer")

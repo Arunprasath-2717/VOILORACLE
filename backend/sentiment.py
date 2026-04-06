@@ -5,6 +5,7 @@ VADER sentiment analysis for articles and events.
 """
 
 import logging
+import os
 from backend import config
 
 logger = logging.getLogger("Kronaxis.sentiment")
