@@ -14,6 +14,9 @@ from pathlib import Path
 from dotenv import load_dotenv  # type: ignore
 from datetime import datetime, timedelta
 
+# Enforce light mode globally to prevent heavy AI models from halting the pipeline processing
+os.environ["KRONAXIS_LIGHT_MODE"] = "true"
+
 # ── Load .env from project root ──────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent.parent.resolve()
 DATA_DIR = BASE_DIR / "data"
