@@ -12,7 +12,7 @@ const StatCard = ({ icon: Icon, label, value, subtitle, color, loading }) => (
   <div className="vo-stat-card" style={{ '--accent': color }}>
     <div className="vo-stat-header">
       <div className="vo-stat-icon" style={{ background: `${color}18`, color }}>
-        <Icon size={18} />
+        <Icon size={16} strokeWidth={1.5} />
       </div>
     </div>
     <div className="vo-stat-body">
@@ -54,7 +54,7 @@ const AISummaryCard = ({ summary, loading }) => {
   return (
     <div className="vo-ai-summary-card">
       <div className="vo-ai-summary-header">
-        <Zap size={16} style={{ color: '#818cf8' }} />
+        <Zap size={14} strokeWidth={1.5} style={{ color: '#818cf8' }} />
         <span className="vo-ai-summary-title">AI Intelligence Summary</span>
       </div>
       <p className="vo-ai-summary-text">{summary.summary}</p>
@@ -101,7 +101,7 @@ const TopEventsPreview = ({ events, loading }) => {
     return (
       <div className="vo-top-events">
         <h3 className="vo-section-title">
-          <Shield size={16} /> Top Priority Events
+          <Shield size={14} strokeWidth={1.5} /> Top Priority Events
         </h3>
         {[1, 2, 3].map((i) => (
           <div key={i} className="vo-event-skeleton">
@@ -125,7 +125,7 @@ const TopEventsPreview = ({ events, loading }) => {
   return (
     <div className="vo-top-events">
       <h3 className="vo-section-title">
-        <Shield size={16} /> Top Priority Events
+        <Shield size={14} strokeWidth={1.5} /> Top Priority Events
       </h3>
       <div className="vo-events-list">
         {topEvents.map((ev) => (

@@ -22,7 +22,7 @@ const TabNavigation = ({ activeTab, onTabChange }) => (
               onClick={() => onTabChange(tab.id)}
               className={`vo-tab ${isActive ? 'vo-tab--active' : ''}`}
             >
-              <Icon size={16} />
+              <Icon size={14} strokeWidth={1.5} />
               <span className="vo-tab-label">{tab.label}</span>
               {isActive && <div className="vo-tab-indicator" />}
             </button>
