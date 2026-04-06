@@ -5,7 +5,7 @@ import {
     Zap, BarChart3, Cloud, Globe as GlobeIcon,
     Shield, Cpu, Brain, Activity, Eye, Sparkles,
     TrendingUp, Users, Newspaper, Landmark, FlaskConical,
-    Layers, ArrowDown, FileText, Network
+    Layers, ArrowDown, FileText, Network, CheckCircle2, Database, RefreshCw, Radio, MapPin, PlayCircle, MessageCircle
 } from 'lucide-react';
 import './LandingPage.css';
 import Globe from 'react-globe.gl';
@@ -125,6 +125,67 @@ const useScrollReveal = () => {
 };
 
 /* ── Animated Counter (Imported) ── */
+
+/* ── Interactive Demo Widget ── */
+const InteractiveDemoWidget = () => {
+    const [events, setEvents] = useState([
+        { id: 1003, title: 'Flooding detected in Chennai', region: 'Tamil Nadu', confidence: 92, time: 'Just now' },
+        { id: 1002, title: 'Policy change announced in Delhi', region: 'India', confidence: 88, time: '2m ago' },
+        { id: 1001, title: 'Global oil price surge', region: 'World', confidence: 91, time: '5m ago' },
+    ]);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setIsRefreshing(true);
+            setTimeout(() => {
+                setEvents(prev => {
+                    const newEvents = [...prev];
+                    const last = newEvents.pop();
+                    const newId = Date.now();
+                    last.id = newId;
+                    last.time = 'Just now';
+                    
+                    newEvents[0].time = '2m ago';
+                    newEvents[1].time = '5m ago';
+
+                    return [last, ...newEvents];
+                });
+                setIsRefreshing(false);
+            }, 600);
+        }, 15000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="demo-widget">
+            <div className="demo-widget-header">
+                <div className="demo-header-title">
+                    <Radio size={16} className="demo-live-pulse" />
+                    <span>Live Intelligence Feed</span>
+                </div>
+                <div className="demo-header-status">
+                    <RefreshCw size={14} className={isRefreshing ? 'demo-spin' : ''} />
+                    <span>Auto-updating</span>
+                </div>
+            </div>
+            <div className={`demo-widget-body ${isRefreshing ? 'demo-refreshing' : ''}`}>
+                {events.map((ev, i) => (
+                    <div key={ev.id} className="demo-event-item fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
+                        <div className="demo-event-meta">
+                            <span className="demo-time">{ev.time}</span>
+                            <span className="demo-conf">Confidence: {ev.confidence}%</span>
+                        </div>
+                        <div className="demo-title">{ev.title}</div>
+                        <div className="demo-region">
+                            <MapPin size={12} /> {ev.region}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 /* ══════════════════════════════════════════════════════════
    MAIN LANDING PAGE
@@ -384,6 +445,65 @@ const LandingPage = () => {
                 </div>
             </section>
 
+            {/* ═══════ 9.5. SOCIAL PROOF ═══════ */}
+            <section className="lp-section lp-social-proof">
+                <div className="section-inner">
+                    <div className="section-header sr">
+                        <div className="section-label"><CheckCircle2 size={14} /> Proven Results</div>
+                        <h2 className="section-heading">
+                            Trusted by <span className="text-gradient">Analysts and Researchers</span>
+                        </h2>
+                    </div>
+                    <div className="social-proof-grid">
+                        {[
+                            { role: 'Financial Analyst', usecase: 'Monitoring global market risks', outcome: 'Detected major policy shift early', text: '"This platform helped us identify emerging risks faster than traditional news monitoring."' },
+                            { role: 'Policy Researcher', usecase: 'Tracking geopolitical developments', outcome: 'Mapped out regional policy trends', text: '"The ability to filter global signals so quickly gives our team an edge in fast-moving situations."' },
+                            { role: 'Risk Manager', usecase: 'Supply chain disruption monitoring', outcome: 'Prevented supply chain delays', text: '"Kronaxis is our early-warning system. We see local issues before they hit global wires."' },
+                        ].map((sp, i) => (
+                            <div key={i} className="social-proof-card sr" data-delay={String(i + 1)}>
+                                <div className="sp-role">{sp.role}</div>
+                                <div className="sp-text">{sp.text}</div>
+                                <div className="sp-details">
+                                    <div className="sp-detail"><strong>Use Case:</strong> {sp.usecase}</div>
+                                    <div className="sp-detail"><strong>Outcome:</strong> {sp.outcome}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════ 9.6. DATA PROVENANCE ═══════ */}
+            <section className="lp-section lp-provenance">
+                <div className="section-inner">
+                    <div className="section-header sr">
+                        <div className="section-label"><Database size={14} /> Source Transparency</div>
+                        <h2 className="section-heading">
+                            Where Our <span className="text-gradient">Intelligence Comes From</span>
+                        </h2>
+                        <p className="section-desc">
+                            Signals are verified across multiple trusted sources before being prioritized.
+                        </p>
+                    </div>
+                    <div className="provenance-grid sr" data-delay="2">
+                        {[
+                            { icon: <Landmark size={24} />, title: 'Official Government Feeds', examples: 'Emergency alerts, Policy announcements, Public safety bulletins' },
+                            { icon: <Newspaper size={24} />, title: 'Major News Wires', examples: 'Global news agencies, Regional news outlets, Verified publishers' },
+                            { icon: <Activity size={24} />, title: 'Public Data Streams', examples: 'Economic indicators, Weather data, Transport updates' },
+                            { icon: <MessageCircle size={24} />, title: 'Social Signals', examples: 'Public reports, Community alerts, Trending discussions' },
+                        ].map((source, i) => (
+                            <div key={i} className="provenance-card">
+                                <div className="prov-icon">{source.icon}</div>
+                                <div className="prov-content">
+                                    <h4 className="prov-title">{source.title}</h4>
+                                    <p className="prov-examples">{source.examples}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* ═══════ 10. GLOBAL COVERAGE ═══════ */}
             <section className="lp-section lp-coverage">
                 <div className="section-inner">
@@ -419,6 +539,26 @@ const LandingPage = () => {
                             real-time information into meaningful insights.
                         </p>
                     </blockquote>
+                </div>
+            </section>
+
+            {/* ═══════ 11.5. INTERACTIVE DEMO ═══════ */}
+            <section className="lp-section lp-interactive-demo">
+                <div className="section-inner">
+                    <div className="section-header sr">
+                        <div className="section-label"><PlayCircle size={14} /> Live Preview</div>
+                        <h2 className="section-heading">
+                            See <span className="text-gradient">Intelligence in Action</span>
+                        </h2>
+                    </div>
+                    <div className="demo-widget-wrapper sr" data-delay="2">
+                        <InteractiveDemoWidget />
+                        <div className="demo-action">
+                            <Link to="/dashboard" className="demo-btn-outline" target="_blank" rel="noopener noreferrer">
+                                Open Full Dashboard <ArrowUpRight size={16} />
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </section>
 

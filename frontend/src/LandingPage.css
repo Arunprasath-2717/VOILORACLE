@@ -313,6 +313,79 @@
 .footer-nav-block a:hover { color: var(--lp-accent); }
 .footer-copy { font-size: 0.8rem; color: var(--lp-text-muted); opacity: 0.7; }
 
+/* ═══ 9.5. SOCIAL PROOF ═══ */
+.lp-social-proof { background: transparent; }
+.social-proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.social-proof-card {
+    padding: 2.5rem 2rem; border-radius: 12px; background: var(--lp-glass); backdrop-filter: blur(12px);
+    border: 1px solid var(--lp-glass-border); box-shadow: var(--lp-shadow-sm);
+    transition: all 0.3s ease; display: flex; flex-direction: column; gap: 1rem;
+}
+.social-proof-card:hover { transform: translateY(-4px); box-shadow: var(--lp-shadow-md); border-color: rgba(47,95,78,0.15); }
+.sp-role { font-size: 0.85rem; font-weight: 800; color: var(--lp-accent); letter-spacing: 0.05em; text-transform: uppercase; }
+.sp-text { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; font-style: italic; color: var(--lp-text-primary); line-height: 1.6; }
+.sp-details { margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 0.5rem; text-align: left; }
+.sp-detail { font-size: 0.9rem; color: var(--lp-text-secondary); }
+.sp-detail strong { color: var(--lp-text-primary); font-weight: 600; }
+
+/* ═══ 9.6. DATA PROVENANCE ═══ */
+.lp-provenance { background: linear-gradient(180deg, rgba(47,95,78,0.02), transparent); }
+.provenance-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; max-width: 900px; margin: 0 auto; }
+.provenance-card {
+    display: flex; align-items: flex-start; gap: 1rem; padding: 1.5rem; border-radius: 12px;
+    background: #fff; border: 1px solid var(--lp-glass-border); box-shadow: var(--lp-shadow-sm);
+    transition: all 0.3s ease; text-align: left;
+}
+.provenance-card:hover { transform: translateX(4px); box-shadow: var(--lp-shadow-md); }
+.prov-icon {
+    width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    background: #f8fafc; border: 1px solid #104a75; color: #104a75; flex-shrink: 0;
+}
+.prov-content { display: flex; flex-direction: column; gap: 0.4rem; }
+.prov-title { font-size: 1.05rem; font-weight: 700; color: var(--lp-text-primary); margin: 0; }
+.prov-examples { font-size: 0.9rem; color: var(--lp-text-secondary); line-height: 1.5; margin: 0; }
+
+/* ═══ 11.5. INTERACTIVE DEMO ═══ */
+.lp-interactive-demo { background: linear-gradient(180deg, transparent, rgba(47,95,78,0.03)); padding-bottom: 2rem; }
+.demo-widget-wrapper { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2rem; width: 100%; }
+.demo-widget {
+    width: 100%; border-radius: 16px; background: linear-gradient(to bottom, #ffffff, #f8fafc);
+    border: 1px solid var(--lp-glass-border); box-shadow: 0 12px 40px rgba(16,74,117,0.08);
+    overflow: hidden;
+}
+.demo-widget-header {
+    display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem;
+    background: rgba(16,74,117,0.04); border-bottom: 1px solid rgba(16,74,117,0.08);
+}
+.demo-header-title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--lp-text-primary); font-size: 0.95rem; }
+.demo-live-pulse { color: #ef4444; animation: pulseRed 2s infinite; }
+@keyframes pulseRed { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+.demo-header-status { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--lp-text-muted); font-weight: 600; }
+.demo-spin { animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.demo-widget-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; transition: opacity 0.3s ease; }
+.demo-refreshing { opacity: 0.6; }
+.demo-event-item {
+    background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: 10px; padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02); border-left: 4px solid var(--lp-accent);
+    display: flex; flex-direction: column; gap: 0.5rem; transition: background 0.3s;
+}
+.demo-event-item:hover { background: #f8fafc; }
+.fade-in-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+@keyframes fadeInUp { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+.demo-event-meta { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600; }
+.demo-time { color: var(--lp-text-muted); }
+.demo-conf { color: #10b981; background: rgba(16,185,129,0.1); padding: 2px 8px; border-radius: 4px; }
+.demo-title { font-size: 1rem; font-weight: 700; color: var(--lp-text-primary); line-height: 1.4; text-align: left; }
+.demo-region { display: flex; align-items: center; gap: 4px; font-size: 0.85rem; color: var(--lp-text-secondary); font-weight: 500; }
+.demo-action { margin-top: 1rem; }
+.demo-btn-outline {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 100px;
+    background: #fff; border: 1px solid var(--lp-accent); color: var(--lp-accent);
+    font-size: 0.95rem; font-weight: 700; text-decoration: none; transition: all 0.2s ease;
+}
+.demo-btn-outline:hover { background: var(--lp-accent); color: #fff; box-shadow: 0 4px 15px rgba(45,127,182,0.3); }
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 1200px) {
     .hero-grid { grid-template-columns: 1fr; text-align: center; }
@@ -325,6 +398,8 @@
     .solution-content .section-label, .coverage-text .section-label { justify-content: center; }
     .coverage-sectors { justify-content: center; }
     .usecases-grid { grid-template-columns: repeat(2, 1fr); }
+    .social-proof-grid { grid-template-columns: repeat(2, 1fr); }
+    .provenance-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
     .lp-nav-links { display: none; }
@@ -337,6 +412,7 @@
     .features-grid { grid-template-columns: 1fr; }
     .tech-grid { grid-template-columns: 1fr 1fr; }
     .usecases-grid { grid-template-columns: 1fr; }
+    .social-proof-grid { grid-template-columns: 1fr; }
     .pipeline-flow { flex-direction: column; }
     .pipeline-arrow { transform: rotate(90deg); }
     .cta-container { padding: 3rem 2rem; }
