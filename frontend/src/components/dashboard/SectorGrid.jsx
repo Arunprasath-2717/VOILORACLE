@@ -117,8 +117,9 @@ const SectorGrid = () => {
             const DirIcon = dir.icon;
 
             return (
-              <div key={imp.sector} className="vo-sector-card">
-                <div className="vo-sector-card-left">
+              <div key={imp.sector} className="vo-sector-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                  <div className="vo-sector-card-left">
                   <div className="vo-sector-icon-wrap">
                     <Icon size={20} />
                   </div>
@@ -162,6 +163,7 @@ const SectorGrid = () => {
                     </div>
                   </div>
                   <DirIcon size={16} style={{ color: dir.color }} />
+                </div>
                 </div>
                 
                 {/* AI Sector Analysis Fast Summary */}
