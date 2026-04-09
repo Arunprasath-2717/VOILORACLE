@@ -107,26 +107,36 @@ export function useAlerts(hours = 6, refreshMs = 60000) {
 
 export function useLiveUpdates() {
   const [liveData, setLiveData] = useState(null);
-  const [connected, setConnected] = useState(false);
-  const wsRef = useRef(null);
+  const [connected, setConnected] = useState(true);
 
   useEffect(() => {
-    const ws = api.connectWebSocket(
-      (data) => {
-        setLiveData(data);
-        setConnected(true);
-      },
-      () => setConnected(false)
-    );
-    wsRef.current = ws;
+    let mounted = true;
+    let failCount = 0;
 
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.onclose = null; // prevent auto-reconnect on unmount
-        wsRef.current.close();
+    const fetchStatus = async () => {
+      try {
+        const res = await api.getMetrics();
+        if (mounted) {
+          setLiveData({ article_count: res.article_count });
+          failCount = 0;
+          if (!connected) setConnected(true);
+        }
+      } catch (e) {
+        if (mounted) {
+          failCount++;
+          if (failCount >= 2) setConnected(false);
+        }
       }
     };
-  }, []);
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 8000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [connected]);
 
   return { liveData, connected };
 }

@@ -158,7 +158,7 @@ function getMockDataFor(endpoint) {
 async function fetchJSON(endpoint) {
   try {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 45000); // 45 seconds to allow heavy OSINT API fetches
+    const id = setTimeout(() => controller.abort(), 115000); // 115 seconds to allow ultra-heavy OSINT API fetches
     const res = await fetch(`${API_BASE}${endpoint}`, { signal: controller.signal });
     clearTimeout(id);
     if (!res.ok) throw new Error(`API ${endpoint} failed: ${res.status}`);

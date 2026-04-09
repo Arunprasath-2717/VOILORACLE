@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -w 1 -k uvicorn.workers.UvicornWorker backend.api:app --bind 0.0.0.0:$PORT
+    startCommand: gunicorn -w 1 -k uvicorn.workers.UvicornWorker backend.api:app --bind 0.0.0.0:$PORT --timeout 120 --keep-alive 5
     envVars:
       - key: KRONAXIS_LIGHT_MODE
         value: "false" # Set to true if further fallback is needed
