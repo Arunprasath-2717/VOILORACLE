@@ -1424,6 +1424,8 @@ svg.lucide {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .vo-sector-icon-wrap {
@@ -1433,14 +1435,16 @@ svg.lucide {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-md);
-  background: var(--color-primary-glow-strong);
-  color: var(--color-primary);
+  background: rgba(13, 148, 136, 0.15); /* Teal glow */
+  color: #0d9488; /* Teal 600 */
   flex-shrink: 0;
 }
 
 .vo-sector-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .vo-sector-name {
@@ -1448,6 +1452,10 @@ svg.lucide {
   font-weight: 600;
   font-size: 0.82rem;
   color: var(--color-text);
+  word-break: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vo-sector-count {
@@ -1459,6 +1467,7 @@ svg.lucide {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .vo-sector-bars {
