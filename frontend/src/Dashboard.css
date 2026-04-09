@@ -1412,6 +1412,8 @@ svg.lucide {
   padding: 1rem;
   transition: var(--transition-fast);
   box-shadow: var(--shadow-card);
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .vo-sector-card:hover {
