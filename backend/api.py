@@ -26,6 +26,8 @@ from backend import pipeline  # type: ignore
 from backend import sector_router  # type: ignore
 from backend import model_router  # type: ignore
 from backend import geo_news_fetcher  # type: ignore
+from backend import chat_engine  # type: ignore
+from backend import alert_engine  # type: ignore
 import logging
 from pydantic import BaseModel  # type: ignore
 
@@ -621,6 +623,37 @@ def get_geo_news(query: str = None):
         return data
     except Exception as e:
         logger.error("Error in get_geo_news: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+@app.post("/api/chat")
+def chat_endpoint(req: ChatRequest):
+    """Conversational intelligence chat — ask questions about global events."""
+    try:
+        result = chat_engine.process_chat_message(req.message)
+        return result
+    except Exception as e:
+        logger.error("Error in chat: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/alerts")
+def get_alerts(hours: int = 6):
+    """Get validated multi-source consensus alerts for critical events."""
+    cache_key = f"alerts_{hours}"
+    cached = _get_cache(cache_key, 120)
+    if cached: return cached
+
+    try:
+        alerts = alert_engine.generate_alerts(hours_back=hours)
+        _set_cache(cache_key, alerts)
+        return alerts
+    except Exception as e:
+        logger.error("Error in get_alerts: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

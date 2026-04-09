@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import Header from '../components/dashboard/Header';
+import { MessageCircle, X } from 'lucide-react';
 
-// Static asset from the public folder (no import needed)
 const heroVideo = '/3.mp4';
 
 import TabNavigation from '../components/dashboard/TabNavigation';
 import OverviewPanel from '../components/dashboard/OverviewPanel';
 import GeoNewsPanel from '../components/dashboard/GeoNewsPanel';
 import LiveFeedList from '../components/dashboard/LiveFeedList';
-import SectorGrid from '../components/dashboard/SectorGrid';
 import AnalyticsCharts from '../components/dashboard/AnalyticsCharts';
-import NeuralNetworkPanel from '../components/dashboard/NeuralNetworkPanel';
+import SectorGrid from '../components/dashboard/SectorGrid';
+import ChatPanel from '../components/dashboard/ChatPanel';
 
 const panels = {
   overview: OverviewPanel,
@@ -18,7 +18,6 @@ const panels = {
   'live-feeds': LiveFeedList,
   sectors: SectorGrid,
   analytics: AnalyticsCharts,
-  'ai-insights': NeuralNetworkPanel,
 };
 
 const TICKER_ITEMS = [
@@ -32,6 +31,7 @@ const TICKER_ITEMS = [
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [chatOpen, setChatOpen] = useState(false);
   const Panel = panels[activeTab];
 
   return (
@@ -42,27 +42,10 @@ const Dashboard = () => {
         <div className="vo-main-inner">
           {activeTab === 'overview' && (
             <div className="vo-hero-wrap">
-
-              {/* ── VIDEO ── */}
-              <video 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
-                src={heroVideo}
-                className="vo-hero-video"
-              />
-
-              {/* ── Vignette ── */}
+              <video autoPlay loop muted playsInline src={heroVideo} className="vo-hero-video" />
               <div className="vo-hero-vignette" />
-
-              {/* ── Scan-line ── */}
               <div className="vo-hero-scanline" />
-
-              {/* ── CONTENT ── */}
               <div className="vo-hero-content">
-
-                {/* Live status */}
                 <div className="vo-hero-badge-row">
                   <span className="vo-hero-badge vo-hero-badge--green">
                     <span className="vo-hero-badge-dot vo-hero-badge-dot--green" />
@@ -73,19 +56,13 @@ const Dashboard = () => {
                     Live Threat Scanning
                   </span>
                 </div>
-
-                {/* Main heading */}
                 <h1 className="vo-hero-title">
                   Global Intelligence{' '}
                   <span className="vo-hero-title-gradient">Command Center</span>
                 </h1>
-
-                {/* Tagline */}
                 <p className="vo-hero-desc">
                   Real-time AI-powered geopolitical surveillance, global financial analytics &amp; neural threat intelligence mapping.
                 </p>
-                
-                {/* Stats */}
                 <div className="vo-hero-stats">
                   <div className="vo-hero-stat">
                     <div className="vo-hero-stat-value">3.2B</div>
@@ -104,10 +81,7 @@ const Dashboard = () => {
                     <div className="vo-hero-stat-label">AI Confidence</div>
                   </div>
                 </div>
-
               </div>
-
-              {/* ── BOTTOM: Intel Ticker ── */}
               <div className="vo-hero-ticker-wrap">
                 <div className="vo-hero-ticker">
                   {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
@@ -115,8 +89,6 @@ const Dashboard = () => {
                   ))}
                 </div>
               </div>
-
-              {/* ── Corner brackets ── */}
               {['top-left','top-right','bottom-left','bottom-right'].map(pos => {
                 const isTop = pos.includes('top');
                 const isLeft = pos.includes('left');
@@ -139,6 +111,22 @@ const Dashboard = () => {
       <footer className="vo-footer">
         <p>KRONAXIS AI Intelligence Platform · Real-time Global Monitoring</p>
       </footer>
+
+      {/* ── Floating Chat Bubble ── */}
+      <button
+        className={`vo-chat-fab ${chatOpen ? 'vo-chat-fab--open' : ''}`}
+        onClick={() => setChatOpen(!chatOpen)}
+        title="Intelligence Analyst Chat"
+      >
+        {chatOpen ? <X size={22} /> : <MessageCircle size={22} />}
+      </button>
+
+      {/* ── Chat Drawer ── */}
+      {chatOpen && (
+        <div className="vo-chat-drawer">
+          <ChatPanel />
+        </div>
+      )}
     </div>
   );
 };

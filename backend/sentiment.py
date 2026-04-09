@@ -23,6 +23,8 @@ def _get_analyzer():
             return _analyzer
 
         try:
+            import torch
+            torch.set_num_threads(1)
             from transformers import pipeline
             logger.info("Loading RoBERTa sentiment model...")
             _analyzer = pipeline(

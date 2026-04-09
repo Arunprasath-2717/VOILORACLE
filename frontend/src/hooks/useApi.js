@@ -99,6 +99,10 @@ export function useGeoNews(query = null, refreshMs = 30000) {
   return useApiData(() => api.getGeoNews(query), [query], refreshMs);
 }
 
+export function useAlerts(hours = 6, refreshMs = 60000) {
+  return useApiData(() => api.getAlerts(hours), [hours], refreshMs);
+}
+
 /* ── WebSocket Hook ───────────────────────────────────── */
 
 export function useLiveUpdates() {

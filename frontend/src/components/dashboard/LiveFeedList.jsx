@@ -1,16 +1,66 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Radio, Filter } from 'lucide-react';
-import { useArticles } from '../../hooks/useApi';
+import { useArticles, useAlerts } from '../../hooks/useApi';
 import EventCard from './EventCard';
 
 const LiveFeedList = () => {
-  const { data: articles, loading, error } = useArticles(100, 10000);
+  const { data: articles, loading: articlesLoading, error } = useArticles(100, 10000);
+  const { data: alerts, loading: alertsLoading } = useAlerts(12, 30000);
   const [filter, setFilter] = useState('all');
 
-  const filteredArticles = (articles || []).filter((a) => {
-    if (filter === 'all') return true;
-    return a.sentiment_label === filter;
-  });
+  // Combine, sort, and deduplicate feed
+  const combinedFeed = useMemo(() => {
+    const rawArticles = articles || [];
+    const rawAlerts = Array.isArray(alerts) ? alerts : [];
+
+    // Filter articles based on user selection
+    const filteredArticles = rawArticles.filter((a) => {
+      if (filter === 'all') return true;
+      return a.sentiment_label === filter;
+    });
+
+    // We only show alerts when viewing "all" or if the alert heavily matches the filter
+    const filteredAlerts = rawAlerts.filter((a) => {
+      if (filter === 'all') return true;
+      return a.sentiment === filter || a.sentiment_label === filter;
+    });
+
+    // Merge them into one array
+    const merged = [...filteredAlerts, ...filteredArticles];
+
+    // Deduplicate by normalized title prefix (fuzzy matching for recurring templated news)
+    const seenMap = new Map();
+    merged.forEach((item) => {
+      if (!item || !item.title) return;
+      
+      // Strip everything except letters, push to lowercase, and take first 40 chars.
+      // This clusters recurring articles like "Morning News Broadcast - March 6" and "Morning News Broadcast - March 11"
+      const fuzzyKey = item.title.toLowerCase().replace(/[^a-z]/g, '').substring(0, 40);
+      
+      if (seenMap.has(fuzzyKey)) {
+        // If we already have this pattern, override it ONLY if the new one is an alert
+        const existing = seenMap.get(fuzzyKey);
+        if (item.severity && !existing.severity) {
+          seenMap.set(fuzzyKey, item);
+        }
+      } else {
+        seenMap.set(fuzzyKey, item);
+      }
+    });
+
+    const deduped = Array.from(seenMap.values());
+
+    // Sort by whichever timestamp exists (descending)
+    deduped.sort((a, b) => {
+      const dateA = new Date(a.timestamp || a.published_at || Date.now()).getTime();
+      const dateB = new Date(b.timestamp || b.published_at || Date.now()).getTime();
+      return dateB - dateA;
+    });
+
+    return deduped;
+  }, [articles, alerts, filter]);
+
+  const loading = articlesLoading || alertsLoading;
 
   return (
     <div className="vo-live-feed">
@@ -18,12 +68,12 @@ const LiveFeedList = () => {
       <div className="vo-live-feed-header">
         <div className="vo-live-feed-title-row">
           <h2 className="vo-section-title">
-            <Radio size={16} /> Live Intelligence Feed
+            <Radio size={16} /> Live Intelligence & Alerts Feed
           </h2>
           <div className="vo-live-indicator">
             <span className="vo-live-dot" />
             <span className="vo-live-count">
-              {filteredArticles.length} signal{filteredArticles.length !== 1 ? 's' : ''} · Auto-updating
+              {combinedFeed.length} signals · Auto-updating
             </span>
           </div>
         </div>
@@ -51,7 +101,7 @@ const LiveFeedList = () => {
       )}
 
       {/* Loading State */}
-      {loading && !articles && (
+      {loading && combinedFeed.length === 0 && (
         <div className="vo-feed-loading">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="vo-skeleton" style={{ height: '5rem', marginBottom: '0.5rem' }} />
@@ -59,18 +109,20 @@ const LiveFeedList = () => {
         </div>
       )}
 
-      {/* Feed Cards */}
-      <div className="vo-feed-list">
-        {filteredArticles.map((article, i) => (
+      <div className="vo-feed-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {/* Unified Stream of Alerts and Articles */}
+        {combinedFeed.map((item, i) => (
           <EventCard
-            key={article.id || i}
-            event={article}
+            key={`${item.severity ? 'alert' : 'article'}-${item.id || i}`}
+            event={item}
             isNew={i < 3 && !loading}
           />
         ))}
-        {!loading && filteredArticles.length === 0 && (
+
+        {/* Empty State */}
+        {!loading && combinedFeed.length === 0 && (
           <p className="vo-empty-state">
-            No articles match the current filter. Try selecting "All" or wait for new data.
+            No intelligence matches the current filter. Try selecting "All" or wait for new data.
           </p>
         )}
       </div>

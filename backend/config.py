@@ -138,8 +138,8 @@ RSS_FEEDS = [
     "https://variety.com/feed/",
 ]
 
-# ── Artificial Intelligence Models \u0026 Clustering ─────────────────────────────
-EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
+# ── Artificial Intelligence Models & Clustering ─────────────────────────────
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 HDBSCAN_MIN_CLUSTER_SIZE = 2
 HDBSCAN_MIN_SAMPLES = 1
 
@@ -277,8 +277,26 @@ def generate_sectors(count=3000):
     return sectors
 
 
-print("Generating 3000 Global Sectors (all fields)...")
-SECTOR_KEYWORDS = generate_sectors(3000)
+_SECTOR_KEYWORDS = None
+def get_sector_keywords():
+    global _SECTOR_KEYWORDS
+    if _SECTOR_KEYWORDS is None:
+        _SECTOR_KEYWORDS = generate_sectors(3000)
+    return _SECTOR_KEYWORDS
+
+_SAMPLE_ARTICLES = None
+def get_sample_articles():
+    global _SAMPLE_ARTICLES
+    if _SAMPLE_ARTICLES is None:
+        _SAMPLE_ARTICLES = generate_sample_data(50)
+    return _SAMPLE_ARTICLES
+
+def __getattr__(name):
+    if name == "SECTOR_KEYWORDS":
+        return get_sector_keywords()
+    if name == "SAMPLE_ARTICLES":
+        return get_sample_articles()
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 # ── Massive Article Dataset Generator (sample data for offline mode) ──────────
 SOURCES = [
@@ -330,5 +348,12 @@ def generate_sample_data(count=50):
     return articles
 
 
-print("Generating 50 Sample Articles (global coverage)...")
-SAMPLE_ARTICLES = generate_sample_data(50)
+_SAMPLE_ARTICLES = None
+def get_sample_articles():
+    global _SAMPLE_ARTICLES
+    if _SAMPLE_ARTICLES is None:
+        print("Generating 50 Sample Articles (lazy load)...")
+        _SAMPLE_ARTICLES = generate_sample_data(50)
+    return _SAMPLE_ARTICLES
+
+SAMPLE_ARTICLES = []

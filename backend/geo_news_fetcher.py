@@ -413,13 +413,43 @@ def _clean_text(text: str) -> str:
     clean = re.sub(r'\s+', ' ', clean)
     return clean.strip()
 
+_TRANSLATION_CACHE = {}
+
+def _translate_to_english(text: str) -> str:
+    if not text or len(text.strip()) < 3:
+        return text
+    
+    # Check if text is likely already English to skip translation
+    # Simple check: if top 100 common English words appear, or just use a flag
+    # For now, let's just use the cache to avoid redundant hits
+    if text in _TRANSLATION_CACHE:
+        return _TRANSLATION_CACHE[text]
+
+    try:
+        from deep_translator import GoogleTranslator
+        translator = GoogleTranslator(source='auto', target='en')
+        translated = translator.translate(text[:4000])
+        final = translated if translated else text
+        _TRANSLATION_CACHE[text] = final
+        return final
+    except Exception as e:
+        logger.warning(f"Translation failed for '{text[:20]}': {e}")
+        return text
+
 def _enrich_article(article: dict) -> dict:
     """Add category, location hierarchy, threat level, and sentiment to an article."""
     title = _clean_text(str(article.get("title", "")))
     desc = _clean_text(str(article.get("description", "")))
-    article["title"] = title
-    article["description"] = desc
     
+    # Fast Translate: Convert non-English context to English
+    # Note: `deep-translator` auto-detects language. It's fast and handles Spanish, etc.
+    if title:
+        title = _translate_to_english(title)
+        article["title"] = title
+    if desc:
+        desc = _translate_to_english(desc)
+        article["description"] = desc
+        
     combined = title + " " + desc
 
     category, score = _detect_category(combined)
@@ -468,44 +498,38 @@ def fetch_geo_intelligence(query: str = None) -> dict:
     all_articles = []
     live_articles = []
     
-    # Prioritize India and Tamil Nadu queries significantly
+    # Prioritize India and Tamil Nadu briefly
     priority_queries = [
-        "tamil nadu news OR chennai crime OR stalin govt",
-        "tamilnadu politics OR dmk news OR aiadmk latest",
-        "india geopolitics OR modi news OR indian defense",
-        "rbi india OR indian economy crisis OR sensex nifty",
-        "isro launches OR drdo military OR bharat politics"
+        "tamil nadu OR chennai OR india geopolitics"
     ]
     
-    # Global/Other countries (30+ coverage)
+    # Global coverage broadly
     global_queries = [
-        "usa geopolitics OR china military OR russia ukraine war",
-        "global cyberattack OR financial crisis 2024",
-        "climate change emergency OR pandemic threat",
-        "energy security OR oil prices global"
+        "geopolitics OR cyberattack OR climate emergency"
     ]
     
     all_q = priority_queries + global_queries
     if query:
         all_q = [query]
 
-    # Limit threads for better stability, focus on top APIs
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    # Increase max_workers to run faster in parallel, set smaller timeout
+    with ThreadPoolExecutor(max_workers=20) as executor:
         futures = []
         for q in all_q:
-            # We fetch from multiple sources but prioritize GNews and NewsData for quality
             futures.append(executor.submit(_fetch_gnews, q))
             futures.append(executor.submit(_fetch_newsdata, q))
-            if not query: # Only deep dive if doing general fetch
-                futures.append(executor.submit(_fetch_gdelt, q))
+            if not query: # general fetch
                 futures.append(executor.submit(_fetch_newsapi, q))
 
-        for future in as_completed(futures, timeout=15):
-            try:
-                res = future.result(timeout=15)
-                if res: live_articles.extend(res)
-            except Exception:
-                pass
+        try:
+            for future in as_completed(futures, timeout=6):
+                try:
+                    res = future.result(timeout=6)
+                    if res: live_articles.extend(res)
+                except Exception:
+                    pass
+        except Exception:
+            pass
         
         # Always try to supplement with RSS for regional dominance
         if not query:
@@ -514,6 +538,18 @@ def fetch_geo_intelligence(query: str = None) -> dict:
                 if rss_res: live_articles.extend(rss_res)
             except Exception:
                 pass
+
+    # ── Scraper Fallback: if APIs returned very little, scrape directly ──
+    if len(live_articles) < 5:
+        logger.info("API sources returned < 5 articles. Activating web scraper fallback.")
+        try:
+            from backend.scraper_fallback import scrape_fallback_news
+            scraped = scrape_fallback_news()
+            if scraped:
+                live_articles.extend(scraped)
+                logger.info("Scraper fallback added %d articles.", len(scraped))
+        except Exception as e:
+            logger.warning("Scraper fallback failed: %s", e)
 
     try:
         db_articles = database.get_recent_articles(300)
@@ -559,7 +595,10 @@ def fetch_geo_intelligence(query: str = None) -> dict:
             seen.add(norm)
             unique.append(a)
 
-    enriched = [_enrich_article(a) for a in unique]
+    # Parallel enrichment since translation and logic can be slow
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        enriched = list(executor.map(_enrich_article, unique))
+        
     enriched.sort(key=lambda x: (x.get("relevance_score", 0), x.get("time", "")), reverse=True)
 
     all_keywords = set()

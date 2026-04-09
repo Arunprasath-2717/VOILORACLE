@@ -7,6 +7,7 @@ Includes deduplication, source credibility, time decay, and lifecycle tracking.
 
 import logging
 import os
+import joblib # type: ignore
 from typing import Any, List, Dict, Set
 import numpy as np  # type: ignore
 import hdbscan  # type: ignore
@@ -32,26 +33,31 @@ def _get_model():
 
         try:
             from sentence_transformers import SentenceTransformer  # type: ignore
+            import torch
+            torch.set_num_threads(1)
             logger.info("Loading embedding model: %s", config.EMBEDDING_MODEL)
-            _model = SentenceTransformer(config.EMBEDDING_MODEL)
+            _model = SentenceTransformer(config.EMBEDDING_MODEL, device="cpu")
         except Exception as e:
             logger.warning("SentenceTransformer not available: %s, using light mode.", e)
             _model = "light"
     return _model
 
 
+memory = joblib.Memory(os.path.join(config.DATA_DIR, 'cache'), verbose=0)
+
+@memory.cache
+def _encode_cached(texts_tuple: tuple) -> np.ndarray:
+    model = _get_model()
+    if model == "light":
+        return np.zeros((len(texts_tuple), 384))
+    return model.encode(list(texts_tuple), show_progress_bar=False, batch_size=8)
+
 def generate_embeddings(texts: list[str]) -> np.ndarray:
     """Generate embeddings for a list of text strings."""
     if not texts:
         return np.array([])
     
-    model = _get_model()
-    if model == "light":
-        # Return dummy embeddings so clustering doesn't crash but also doesn't do much
-        # We will handle light clustering separately
-        return np.zeros((len(texts), 384))
-
-    embeddings = model.encode(texts, show_progress_bar=False, batch_size=32)
+    embeddings = _encode_cached(tuple(texts))
     logger.info("Generated embeddings: shape %s", embeddings.shape)
     return embeddings
 

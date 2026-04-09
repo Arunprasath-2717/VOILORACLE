@@ -246,6 +246,20 @@ export async function analyzeText(text, title = '') {
   return res.json();
 }
 
+export async function sendChatMessage(message) {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  });
+  if (!res.ok) throw new Error(`Chat failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getAlerts(hours = 6) {
+  return fetchJSON(`/alerts?hours=${hours}`);
+}
+
 /* ── WebSocket ──────────────────────────────────────────── */
 
 export function connectWebSocket(onMessage, onError) {

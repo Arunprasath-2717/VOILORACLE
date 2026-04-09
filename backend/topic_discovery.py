@@ -21,12 +21,14 @@ def _get_topic_model():
             return _topic_model
 
         try:
+            import torch
+            torch.set_num_threads(1)
             from bertopic import BERTopic
             from sentence_transformers import SentenceTransformer
             from backend import config
             
             logger.info("Loading BERTopic...")
-            embedding_model = SentenceTransformer(config.EMBEDDING_MODEL)
+            embedding_model = SentenceTransformer(config.EMBEDDING_MODEL, device="cpu")
             # Use English by default, mapping to mini LM or configured BGE small
             _topic_model = BERTopic(embedding_model=embedding_model, min_topic_size=2)
         except Exception as e:

@@ -93,9 +93,7 @@ const GeoNewsPanel = () => {
     }
 
     if (activeKeywords.length > 0) {
-      const filtered = rawNews.filter(n => (n.keywords || []).some(k => activeKeywords.includes(k)));
-      // If keyword filter yields nothing, show all news for the region instead of empty
-      return filtered.length > 0 ? filtered : rawNews;
+      return rawNews.filter(n => (n.keywords || []).some(k => activeKeywords.includes(k)));
     }
     return rawNews;
   }, [currentCountry, currentState, currentDistrict, activeKeywords, data]);

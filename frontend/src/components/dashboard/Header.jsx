@@ -38,7 +38,7 @@ const Header = ({ onLogoClick }) => {
     <header className="vo-header">
       <div className="vo-header-inner">
         <div className="vo-header-brand" onClick={onLogoClick} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <img src={NameLogo} alt="Kronaxis" className="vo-header-name-img" style={{ height: '140px', marginTop: '-15px', marginBottom: '-15px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.1))' }} />
+          <img src={NameLogo} alt="Kronaxis" className="vo-header-name-img" style={{ height: '90px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.1))' }} />
         </div>
 
         {/* Center — Search */}

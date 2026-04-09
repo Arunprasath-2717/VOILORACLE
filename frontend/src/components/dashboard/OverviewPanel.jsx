@@ -1,5 +1,5 @@
-import { Activity, Newspaper, TrendingUp, Shield, Zap, BarChart2 } from 'lucide-react';
-import { useMetrics, useAISummary, useEvents } from '../../hooks/useApi';
+import { Activity, Newspaper, TrendingUp, Shield, Zap, BarChart2, AlertTriangle, AlertCircle, Info, Users } from 'lucide-react';
+import { useMetrics, useAISummary, useEvents, useAlerts } from '../../hooks/useApi';
 import AnimatedNumber from '../AnimatedNumber';
 
 /* ── Skeleton Loader ─────────────────────────────────── */
@@ -40,14 +40,11 @@ const AISummaryCard = ({ summary, loading }) => {
       </div>
     );
   }
-
   if (!summary) return null;
 
   const moodColor = {
-    'Strongly Bullish': '#10b981',
-    'Moderately Bullish': '#34d399',
-    'Strongly Bearish': '#ef4444',
-    'Moderately Bearish': '#f97316',
+    'Strongly Bullish': '#10b981', 'Moderately Bullish': '#34d399',
+    'Strongly Bearish': '#ef4444', 'Moderately Bearish': '#f97316',
     'Mixed / Uncertain': '#eab308',
   }[summary.market_mood] || '#6b7280';
 
@@ -61,9 +58,7 @@ const AISummaryCard = ({ summary, loading }) => {
       <div className="vo-ai-summary-metrics">
         <div className="vo-ai-metric">
           <span className="vo-ai-metric-label">Market Mood</span>
-          <span className="vo-ai-metric-value" style={{ color: moodColor }}>
-            {summary.market_mood}
-          </span>
+          <span className="vo-ai-metric-value" style={{ color: moodColor }}>{summary.market_mood}</span>
         </div>
         <div className="vo-ai-metric">
           <span className="vo-ai-metric-label">Stability</span>
@@ -75,21 +70,9 @@ const AISummaryCard = ({ summary, loading }) => {
         </div>
       </div>
       <div className="vo-ai-sentiment-bar">
-        <div
-          className="vo-ai-sentiment-segment vo-ai-sentiment-pos"
-          style={{ width: `${summary.positive_pct}%` }}
-          title={`Positive: ${summary.positive_pct}%`}
-        />
-        <div
-          className="vo-ai-sentiment-segment vo-ai-sentiment-neg"
-          style={{ width: `${summary.negative_pct}%` }}
-          title={`Negative: ${summary.negative_pct}%`}
-        />
-        <div
-          className="vo-ai-sentiment-segment vo-ai-sentiment-neu"
-          style={{ width: `${100 - summary.positive_pct - summary.negative_pct}%` }}
-          title="Neutral"
-        />
+        <div className="vo-ai-sentiment-segment vo-ai-sentiment-pos" style={{ width: `${summary.positive_pct}%` }} />
+        <div className="vo-ai-sentiment-segment vo-ai-sentiment-neg" style={{ width: `${summary.negative_pct}%` }} />
+        <div className="vo-ai-sentiment-segment vo-ai-sentiment-neu" style={{ width: `${100 - summary.positive_pct - summary.negative_pct}%` }} />
       </div>
     </div>
   );
@@ -100,33 +83,18 @@ const TopEventsPreview = ({ events, loading }) => {
   if (loading) {
     return (
       <div className="vo-top-events">
-        <h3 className="vo-section-title">
-          <Shield size={14} strokeWidth={1.5} /> Top Priority Events
-        </h3>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="vo-event-skeleton">
-            <Skeleton height="3.5rem" />
-          </div>
-        ))}
+        <h3 className="vo-section-title"><Shield size={14} strokeWidth={1.5} /> Top Priority Events</h3>
+        {[1, 2, 3].map((i) => <div key={i}><Skeleton height="3.5rem" /></div>)}
       </div>
     );
   }
 
-  const topEvents = (events || [])
-    .sort((a, b) => (b.importance_score || 0) - (a.importance_score || 0))
-    .slice(0, 5);
-
-  const riskColor = (score) => {
-    if (score >= 0.7) return '#ef4444';
-    if (score >= 0.4) return '#f59e0b';
-    return '#10b981';
-  };
+  const topEvents = (events || []).sort((a, b) => (b.importance_score || 0) - (a.importance_score || 0)).slice(0, 5);
+  const riskColor = (s) => s >= 0.7 ? '#ef4444' : s >= 0.4 ? '#f59e0b' : '#10b981';
 
   return (
     <div className="vo-top-events">
-      <h3 className="vo-section-title">
-        <Shield size={14} strokeWidth={1.5} /> Top Priority Events
-      </h3>
+      <h3 className="vo-section-title"><Shield size={14} strokeWidth={1.5} /> Top Priority Events</h3>
       <div className="vo-events-list">
         {topEvents.map((ev) => (
           <div key={ev.id} className="vo-event-item">
@@ -136,77 +104,82 @@ const TopEventsPreview = ({ events, loading }) => {
               <div className="vo-event-meta">
                 <span>{ev.size} article{ev.size !== 1 ? 's' : ''}</span>
                 <span className="vo-event-sentiment">{ev.sentiment_label}</span>
-                {ev.lifecycle && (
-                  <span className="vo-event-lifecycle">{ev.lifecycle}</span>
-                )}
+                {ev.lifecycle && <span className="vo-event-lifecycle">{ev.lifecycle}</span>}
               </div>
             </div>
             <div className="vo-event-scores">
-              <span className="vo-event-risk" style={{ color: riskColor(ev.risk_score || 0) }}>
-                Risk: {((ev.risk_score || 0) * 100).toFixed(0)}%
-              </span>
+              <span className="vo-event-risk" style={{ color: riskColor(ev.risk_score || 0) }}>Risk: {((ev.risk_score || 0) * 100).toFixed(0)}%</span>
             </div>
           </div>
         ))}
-        {topEvents.length === 0 && (
-          <p className="vo-empty-state">No events detected yet. The pipeline is processing data...</p>
-        )}
+        {topEvents.length === 0 && <p className="vo-empty-state">No events detected yet. The pipeline is processing data...</p>}
       </div>
     </div>
   );
 };
 
-/* ── Overview Panel (Main) ───────────────────────────── */
+/* ── Alerts Section (inline) ─────────────────────────── */
+const SEVERITY_CONFIG = {
+  Critical: { icon: AlertTriangle, color: '#dc2626' },
+  High:     { icon: AlertCircle, color: '#f97316' },
+  Medium:   { icon: Info, color: '#f59e0b' },
+  Low:      { icon: Shield, color: '#10b981' },
+};
+
+const AlertsSection = ({ alerts, loading }) => {
+  const alertList = Array.isArray(alerts) ? alerts.slice(0, 5) : [];
+  if (loading && !alerts) return null;
+  if (alertList.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: '1.5rem' }}>
+      <h3 className="vo-section-title"><AlertTriangle size={14} strokeWidth={1.5} /> Validated Alerts</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {alertList.map((alert, i) => {
+          const conf = SEVERITY_CONFIG[alert.severity] || SEVERITY_CONFIG.Low;
+          const Icon = conf.icon;
+          return (
+            <div key={alert.id || i} className="vo-event-item" style={{ borderLeft: `3px solid ${conf.color}` }}>
+              <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', background: `${conf.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon size={12} style={{ color: conf.color }} />
+              </div>
+              <div className="vo-event-content">
+                <span className="vo-event-label">{alert.title}</span>
+                <div className="vo-event-meta">
+                  <span style={{ color: conf.color, fontWeight: 600, fontSize: '0.62rem', textTransform: 'uppercase' }}>{alert.severity}</span>
+                  <span><Users size={10} style={{ display: 'inline', verticalAlign: 'middle' }} /> {alert.source_count} sources</span>
+                  <span>{alert.sentiment}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/* ── Overview Panel ──────────────────────────────────── */
 const OverviewPanel = () => {
   const { data: metrics, loading: metricsLoading } = useMetrics(15000);
   const { data: summary, loading: summaryLoading } = useAISummary(30000);
   const { data: events, loading: eventsLoading } = useEvents(25, 10000);
+  const { data: alerts, loading: alertsLoading } = useAlerts(12, 60000);
 
   const sentimentDist = metrics?.sentiment_distribution || {};
-  const totalSentiment =
-    (sentimentDist.Positive || 0) + (sentimentDist.Negative || 0) + (sentimentDist.Neutral || 0);
+  const totalSentiment = (sentimentDist.Positive || 0) + (sentimentDist.Negative || 0) + (sentimentDist.Neutral || 0);
 
   return (
     <div className="vo-overview">
-      {/* Stats Grid */}
       <div className="vo-stats-grid">
-        <StatCard
-          icon={Newspaper}
-          label="Total Articles"
-          value={metrics?.article_count || 0}
-          color="#3b82f6"
-          loading={metricsLoading}
-        />
-        <StatCard
-          icon={Activity}
-          label="Active Events"
-          value={metrics?.event_count || 0}
-          color="#8b5cf6"
-          loading={metricsLoading}
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Positive Signals"
-          value={sentimentDist.Positive || 0}
-          subtitle={totalSentiment > 0 ? `${((sentimentDist.Positive / totalSentiment) * 100).toFixed(1)}%` : ''}
-          color="#10b981"
-          loading={metricsLoading}
-        />
-        <StatCard
-          icon={BarChart2}
-          label="Risk Signals"
-          value={sentimentDist.Negative || 0}
-          subtitle={totalSentiment > 0 ? `${((sentimentDist.Negative / totalSentiment) * 100).toFixed(1)}%` : ''}
-          color="#ef4444"
-          loading={metricsLoading}
-        />
+        <StatCard icon={Newspaper} label="Total Articles" value={metrics?.article_count || 0} color="#3b82f6" loading={metricsLoading} />
+        <StatCard icon={Activity} label="Active Events" value={metrics?.event_count || 0} color="#8b5cf6" loading={metricsLoading} />
+        <StatCard icon={TrendingUp} label="Positive Signals" value={sentimentDist.Positive || 0} subtitle={totalSentiment > 0 ? `${((sentimentDist.Positive / totalSentiment) * 100).toFixed(1)}%` : ''} color="#10b981" loading={metricsLoading} />
+        <StatCard icon={BarChart2} label="Risk Signals" value={sentimentDist.Negative || 0} subtitle={totalSentiment > 0 ? `${((sentimentDist.Negative / totalSentiment) * 100).toFixed(1)}%` : ''} color="#ef4444" loading={metricsLoading} />
       </div>
-
-      {/* AI Summary */}
       <AISummaryCard summary={summary} loading={summaryLoading} />
-
-      {/* Top Events */}
       <TopEventsPreview events={events} loading={eventsLoading} />
+      <AlertsSection alerts={alerts} loading={alertsLoading} />
     </div>
   );
 };
