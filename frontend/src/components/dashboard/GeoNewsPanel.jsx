@@ -6,8 +6,35 @@ import './GeoNewsPanel.css';
 const GeoNewsPanel = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTrigger, setSearchTrigger] = useState(null);
-  const { data, loading, error } = useGeoNews(searchTrigger, 10000);
-  
+  const { data: apiData, loading, error } = useGeoNews(searchTrigger, 15000);
+  const [persistedData, setPersistedData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vo_geo_intel_cache');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) { return null; }
+  });
+
+  // Determine if apiData has actual news content
+  const hasApiNews = useMemo(() => {
+    return apiData?.regions?.some(r => r.news?.length > 0) || apiData?.keywords?.length > 0;
+  }, [apiData]);
+
+  // Sync cache when new news arrives
+  useEffect(() => {
+    if (hasApiNews) {
+      const cachePayload = {
+        ...apiData,
+        timestamp: new Date().toISOString()
+      };
+      setPersistedData(cachePayload);
+      localStorage.setItem('vo_geo_intel_cache', JSON.stringify(cachePayload));
+    }
+  }, [apiData, hasApiNews]);
+
+  // Use persisted data if API is loading/empty
+  const data = hasApiNews ? { ...apiData, timestamp: new Date().toISOString() } : persistedData;
+  const isShowingArchive = !hasApiNews && persistedData;
+
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedState, setSelectedState] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
@@ -260,6 +287,24 @@ const GeoNewsPanel = () => {
               {currentDistrict?.name || currentState?.name || currentCountry?.name || "Global"}
             </div>
           </div>
+          
+          {isShowingArchive && (
+            <div className="vo-archive-notice" style={{ 
+              padding: '0.4rem 0.8rem', 
+              background: 'rgba(245,158,11,0.08)', 
+              border: '1px solid rgba(245,158,11,0.2)',
+              borderRadius: '6px',
+              margin: '0 1rem 1rem 1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.68rem',
+              color: '#f59e0b'
+            }}>
+              <Zap size={12} />
+              <span>Offline Cache Active: Last synchronized <strong>{new Date(persistedData.timestamp).toLocaleString()}</strong></span>
+            </div>
+          )}
           
           <div className="vo-geonews-feed-list">
             {Object.keys(groupedNews).length > 0 ? (
