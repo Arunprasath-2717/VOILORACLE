@@ -419,11 +419,17 @@ def _translate_to_english(text: str) -> str:
     if not text or len(text.strip()) < 3:
         return text
     
-    # Check if text is likely already English to skip translation
-    # Simple check: if top 100 common English words appear, or just use a flag
-    # For now, let's just use the cache to avoid redundant hits
     if text in _TRANSLATION_CACHE:
         return _TRANSLATION_CACHE[text]
+
+    # Fast heuristic check for English: skip network translation if basic English words found
+    lower_text = text.lower()
+    common_english = {"the", "and", "to", "of", "a", "in", "for", "is", "on", "that", "by", "this", "with", "are", "be"}
+    words = set(re.findall(r'\b[a-z]+\b', lower_text))
+    # Note: Using 2 or more common words to definitively spot English
+    if len(words.intersection(common_english)) >= 2:
+        _TRANSLATION_CACHE[text] = text
+        return text
 
     try:
         from deep_translator import GoogleTranslator
