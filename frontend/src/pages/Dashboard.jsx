@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import Header from '../components/dashboard/Header';
-import { MessageCircle, X } from 'lucide-react';
-
 const heroVideo = '/3.mp4';
 
 import TabNavigation from '../components/dashboard/TabNavigation';
@@ -10,8 +8,6 @@ import GeoNewsPanel from '../components/dashboard/GeoNewsPanel';
 import LiveFeedList from '../components/dashboard/LiveFeedList';
 import AnalyticsCharts from '../components/dashboard/AnalyticsCharts';
 import SectorGrid from '../components/dashboard/SectorGrid';
-import ChatPanel from '../components/dashboard/ChatPanel';
-
 const panels = {
   overview: OverviewPanel,
   'geo-news': GeoNewsPanel,
@@ -31,7 +27,6 @@ const TICKER_ITEMS = [
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [chatOpen, setChatOpen] = useState(false);
   const Panel = panels[activeTab];
 
   return (
@@ -112,21 +107,6 @@ const Dashboard = () => {
         <p>KRONAXIS AI Intelligence Platform · Real-time Global Monitoring</p>
       </footer>
 
-      {/* ── Floating Chat Bubble ── */}
-      <button
-        className={`vo-chat-fab ${chatOpen ? 'vo-chat-fab--open' : ''}`}
-        onClick={() => setChatOpen(!chatOpen)}
-        title="Intelligence Analyst Chat"
-      >
-        {chatOpen ? <X size={22} /> : <MessageCircle size={22} />}
-      </button>
-
-      {/* ── Chat Drawer ── */}
-      {chatOpen && (
-        <div className="vo-chat-drawer">
-          <ChatPanel />
-        </div>
-      )}
     </div>
   );
 };
