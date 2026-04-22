@@ -104,7 +104,7 @@ const Dashboard = () => {
         </div>
       </main>
       <footer className="vo-footer">
-        <p>KRONAXIS AI Intelligence Platform · Real-time Global Monitoring</p>
+        <p>ATLOX AI Intelligence Platform · Real-time Global Monitoring</p>
       </footer>
 
     </div>

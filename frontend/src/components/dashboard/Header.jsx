@@ -1,7 +1,7 @@
 import { Search, Wifi, WifiOff } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLiveUpdates, useStatus } from '../../hooks/useApi';
-import NameLogo from '../../Logo.png';
+import Logo from '../Logo';
 import AnimatedNumber from '../AnimatedNumber';
 
 const Header = ({ onLogoClick }) => {
@@ -38,7 +38,7 @@ const Header = ({ onLogoClick }) => {
     <header className="vo-header">
       <div className="vo-header-inner">
         <div className="vo-header-brand" onClick={onLogoClick} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <img src={NameLogo} alt="Kronaxis" className="vo-header-name-img" style={{ height: '90px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.1))' }} />
+          <Logo height="38px" />
         </div>
 
         {/* Center — Search */}

@@ -9,9 +9,9 @@ import {
 } from 'lucide-react';
 import './LandingPage.css';
 import Globe from 'react-globe.gl';
-import Logo from './Logo.png';
-const NameLogo = Logo;
 import AnimatedNumber from './components/AnimatedNumber';
+import Logo from './components/Logo';
+import ParallaxMap from './components/ParallaxMap';
 
 /* ══════════════════════════════════════════════════════════
    DATA
@@ -203,17 +203,14 @@ const LandingPage = () => {
 
     return (
         <div className="lp-root">
-            {/* Ambient BG */}
-            <div className="ambient-bg">
-                <div className="ambient-orb" /><div className="ambient-orb" />
-                <div className="ambient-orb" /><div className="ambient-orb" />
-            </div>
+            {/* Smooth Parallax Map Background */}
+            <ParallaxMap />
             <FloatingParticles />
 
             {/* ═══════ 1. NAVBAR ═══════ */}
             <nav className={`lp-nav ${navScrolled ? 'scrolled' : ''}`}>
-                <a href="#" className="lp-nav-logo" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                    <img src={NameLogo} alt="Kronaxis" className="logo-name-img" style={{ height: '200px', transform: 'translateY(12px)', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.12))' }} />
+                <a href="#" className="lp-nav-logo" style={{ display: 'flex', alignItems: 'center' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                    <Logo height="48px" />
                 </a>
                 <button className="mobile-toggle" onClick={() => setMobileMenu(!mobileMenu)}>
                     {mobileMenu ? <X size={24} /> : <Menu size={24} />}
@@ -224,7 +221,7 @@ const LandingPage = () => {
                     <a href="#use-cases">Use Cases</a>
 
                     <Link to="/dashboard" className="lp-nav-cta" target="_blank" rel="noopener noreferrer">
-                        Open Dashboard <ChevronRight size={16} />
+                        EXPLORE IN <ChevronRight size={16} />
                     </Link>
                 </div>
             </nav>
@@ -238,19 +235,15 @@ const LandingPage = () => {
                             <span className="gradient-word">Powered by AI</span>
                         </h1>
                         <p className="hero-subtitle">
-                            Kronaxis analyzes global news streams in real time, detects emerging events,
+                            Atlox AI analyzes global news streams in real time, detects emerging events,
                             evaluates sentiment across sectors, and delivers actionable intelligence
                             through a powerful analytics dashboard.
                         </p>
                         <div className="hero-actions">
                             <Link to="/dashboard" className="hero-btn-primary" target="_blank" rel="noopener noreferrer">
-                                Get Started <ArrowUpRight size={18} />
+                                EXPLORE IN <ArrowUpRight size={18} />
                             </Link>
-
                         </div>
-                        <p className="hero-credibility">
-                            Monitoring thousands of global news signals across finance, technology, politics, and more.
-                        </p>
                     </div>
                     <div className="hero-globe-wrapper sr" data-delay="2">
                         <div className="hero-globe-glow" />
@@ -278,7 +271,7 @@ const LandingPage = () => {
                     </div>
                     <div className="problem-highlight sr" data-delay="2">
                         <Sparkles size={20} className="problem-icon" />
-                        <p>Kronaxis transforms this information chaos into structured intelligence.</p>
+                        <p>Atlox AI transforms this information chaos into structured intelligence.</p>
                     </div>
                 </div>
             </section>
@@ -294,7 +287,7 @@ const LandingPage = () => {
                                 <span className="text-gradient">global intelligence</span>
                             </h2>
                             <p className="section-desc">
-                                Kronaxis uses advanced AI models to detect real-world events from news data,
+                                Atlox AI uses advanced AI models to detect real-world events from news data,
                                 analyze sentiment signals, and reveal how developments influence global sectors in real time.
                             </p>
                         </div>
@@ -362,7 +355,7 @@ const LandingPage = () => {
                             Built on <span className="text-gradient">advanced artificial intelligence</span>
                         </h2>
                         <p className="section-desc">
-                            Kronaxis combines multiple AI engines to convert unstructured news data
+                            Atlox AI combines multiple AI engines to convert unstructured news data
                             into structured intelligence insights.
                         </p>
                     </div>
@@ -395,7 +388,7 @@ const LandingPage = () => {
                             <span className="text-gradient">actionable intelligence</span>
                         </h2>
                         <p className="section-desc">
-                            Kronaxis continuously collects and analyzes global news signals
+                            Atlox AI continuously collects and analyzes global news signals
                             to generate structured intelligence insights.
                         </p>
                     </div>
@@ -458,7 +451,7 @@ const LandingPage = () => {
                         {[
                             { role: 'Financial Analyst', usecase: 'Monitoring global market risks', outcome: 'Detected major policy shift early', text: '"This platform helped us identify emerging risks faster than traditional news monitoring."' },
                             { role: 'Policy Researcher', usecase: 'Tracking geopolitical developments', outcome: 'Mapped out regional policy trends', text: '"The ability to filter global signals so quickly gives our team an edge in fast-moving situations."' },
-                            { role: 'Risk Manager', usecase: 'Supply chain disruption monitoring', outcome: 'Prevented supply chain delays', text: '"Kronaxis is our early-warning system. We see local issues before they hit global wires."' },
+                            { role: 'Risk Manager', usecase: 'Supply chain disruption monitoring', outcome: 'Prevented supply chain delays', text: '"Atlox AI is our early-warning system. We see local issues before they hit global wires."' },
                         ].map((sp, i) => (
                             <div key={i} className="social-proof-card sr" data-delay={String(i + 1)}>
                                 <div className="sp-role">{sp.role}</div>
@@ -515,7 +508,7 @@ const LandingPage = () => {
                                 <span className="text-gradient">thousands of sectors</span>
                             </h2>
                             <p className="section-desc">
-                                Kronaxis monitors more than 3,000 AI-generated sectors across the global
+                                Atlox AI monitors more than 3,000 AI-generated sectors across the global
                                 information ecosystem.
                             </p>
                         </div>
@@ -535,7 +528,7 @@ const LandingPage = () => {
                     <blockquote className="vision-quote sr">
                         <Sparkles size={24} className="vision-icon" />
                         <p>
-                            Kronaxis aims to build a global intelligence layer that transforms
+                            Atlox AI aims to build a global intelligence layer that transforms
                             real-time information into meaningful insights.
                         </p>
                     </blockquote>
@@ -554,33 +547,21 @@ const LandingPage = () => {
                     <div className="demo-widget-wrapper sr" data-delay="2">
                         <InteractiveDemoWidget />
                         <div className="demo-action">
-                            <Link to="/dashboard" className="demo-btn-outline" target="_blank" rel="noopener noreferrer">
-                                Open Full Dashboard <ArrowUpRight size={16} />
+                            <Link to="/dashboard" className="demo-btn-primary" target="_blank" rel="noopener noreferrer">
+                                EXPLORE IN <ArrowUpRight size={16} />
                             </Link>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* ═══════ 12. FINAL CTA ═══════ */}
-            <section className="lp-section lp-cta">
-                <div className="cta-container sr">
-                    <h2 className="cta-heading">Explore global intelligence<br />in real time</h2>
-                    <div className="cta-actions">
-                        <Link to="/dashboard" className="cta-btn-white" target="_blank" rel="noopener noreferrer">
-                            Explore Now <ArrowUpRight size={18} />
-                        </Link>
-
-                    </div>
-                </div>
-            </section>
 
             {/* ═══════ 13. FOOTER ═══════ */}
             <footer className="lp-footer">
                 <div className="footer-grid">
                     <div className="footer-brand-block">
-                        <div className="footer-brand">
-                            <img src={NameLogo} alt="Kronaxis" className="logo-name-img" style={{ height: '140px' }} />
+                        <div className="footer-brand" style={{ marginBottom: '1rem' }}>
+                            <Logo height="40px" />
                         </div>
                         <p className="footer-tagline">AI-Powered Global Intelligence Platform</p>
                     </div>
@@ -588,7 +569,7 @@ const LandingPage = () => {
                         <a href="#features">Neural Architecture</a>
                         <a href="#features">Intelligence Network</a>
                     </div>
-                    <p className="footer-copy">© 2026 KRONAXIS</p>
+                    <p className="footer-copy">© 2026 ATLOX AI</p>
                 </div>
             </footer>
         </div>

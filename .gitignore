@@ -41,6 +41,8 @@ tmp/
 # Large Binary Files
 *.mp4
 !frontend/public/3.mp4
+# Data
+data/
 *.mkv
 *.avi
 *.mov
