@@ -1,8 +1,6 @@
-<p align="center">
-  <img src="frontend/src/Logo.png" alt="Kronaxis Logo" width="120" />
-</p>
 
-<h1 align="center">🔮 Kronaxis — AI-Powered Real-Time Global Intelligence Network</h1>
+
+<h1 align="center">🔮 Atlox Ai — AI-Powered Real-Time Global Intelligence Network</h1>
 
 <p align="center">
   <strong>Enterprise-Grade NLP Pipeline</strong> · <strong>13 AI Engines</strong> · <strong>8 Data Sources</strong> · <strong>3000+ Sectors</strong>
